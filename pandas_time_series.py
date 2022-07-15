@@ -182,3 +182,72 @@ google['annual_return'] = google.Close.pct_change(periods=360).mul(100)
 google.plot(subplots=True)
 plt.show()
 
+# Compare growth rates
+# stock prices: hard to compare at different levels
+# one solution: normalize price series to start at 100
+    # divide all time series by its first value and multiply by 100
+first_price = google.price.iloc[0]
+normalized = google.price.div(first_price).mul(100)
+normalized.plot(title="Google Normalized Series")
+
+# normalizing multiple series
+prices = pd.read_csv('stock_prices.csv', parse_dates=['date'], index_col='date')
+normalized = prices.div(prices.iloc[0])
+
+index = pd.read_csv('benchmark.csv', parse_dates=['date'], index_col='date')
+prices = pd.concat([prices, index], axis=1).dropna()
+
+normalized = prices.div(prices.iloc[0]).mul(100)
+normalized.plot()
+
+# plotting performance difference
+diff = normalized[tickers].sub(normalized['SP500'], axis=0)
+
+# Exercises:
+# Import data here
+prices = pd.read_csv('asset_classes.csv', parse_dates=['DATE'], index_col='DATE')
+
+# Inspect prices here
+print(prices.info())
+
+# Select first prices
+first_prices = prices.iloc[0]
+
+# Create normalized
+normalized = prices.div(first_prices).mul(100)
+
+# Plot normalized
+normalized.plot()
+plt.show()
+
+# Import stock prices and index here
+stocks = pd.read_csv('nyse.csv', parse_dates=['date'], index_col='date')
+dow_jones = pd.read_csv('dow_jones.csv', parse_dates=['date'], index_col='date')
+
+# Concatenate data and inspect result here
+data = pd.concat([stocks, dow_jones], axis=1)
+print(data.info())
+
+# Normalize and plot your data here
+normalized = data.div(data.iloc[0]).mul(100).plot()
+plt.show()
+
+# Create tickers
+tickers = ['MSFT', 'AAPL']
+
+# Import stock data here
+stocks = pd.read_csv('msft_aapl.csv', parse_dates=['date'], index_col='date')
+
+# Import index here
+sp500 = pd.read_csv('sp500.csv', parse_dates=['date'], index_col='date')
+
+# Concatenate stocks and index here
+data = pd.concat([stocks, sp500], axis=1).dropna()
+
+# Normalize data
+normalized = data.div(data.iloc[0]).mul(100)
+
+# Subtract the normalized index from the normalized stock prices, and plot the result
+diff = normalized[tickers].sub(normalized['SP500'], axis=0).plot()
+plt.show()
+
