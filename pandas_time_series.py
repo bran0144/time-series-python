@@ -251,3 +251,63 @@ normalized = data.div(data.iloc[0]).mul(100)
 diff = normalized[tickers].sub(normalized['SP500'], axis=0).plot()
 plt.show()
 
+# Changing time series frequency: resampling
+# frequency conversion affects the data
+# upsampling creates new rows that you need to tell pandas how to fill or interpolate
+# downsampling - you need to tell pandas how to aggregate existing data
+
+dates = pd.date_range(start='2016', periods=4, freq='Q')
+data = range(1,5)
+quarterly = pd.Series(data=data, index=dates)
+
+# default for quarterly is Dec for end of 4th quarter
+monthly = quarterly.asfreq('M')
+
+# ways to fill in missing values
+monthly = monthly.to_frame('baseline')
+monthly['ffill'] = quarterly.asfreq('M', method='ffill')   #forward fill
+monthly['bfill'] = quarterly.asfreq('M', method='bfill')    #backward fill
+monthly['value'] = quarterly.asfreq('M', fill_value=0)      #replace with a value
+
+# you can reindex too
+dates = pd.date_range(start='2016', periods=12, freq='M')
+quarterly.reindex(dates)
+
+# exercises
+# Set start and end dates
+start = '2016-1-1'
+end = '2016-2-29'
+
+# Create monthly_dates here
+monthly_dates = pd.date_range(start=start, end=end, freq='M')
+
+# Create and print monthly here
+monthly = pd.Series(data=[1,2], index=monthly_dates)
+print(monthly)
+
+# Create weekly_dates here
+weekly_dates = pd.date_range(start=start, end=end, freq='W')
+
+# Print monthly, reindexed using weekly_dates
+print(monthly.reindex(weekly_dates))
+print(monthly.reindex(weekly_dates, method='bfill'))
+print(monthly.reindex(weekly_dates, method='ffill'))
+
+# Import data here
+data = pd.read_csv('unemployment.csv', parse_dates=['date'], index_col='date')
+
+# Show first five rows of weekly series
+print(data.asfreq('W').head())
+
+# Show first five rows of weekly series with bfill option
+print(data.asfreq('W', method='bfill').head())
+
+# Create weekly series with ffill option and show first five rows
+weekly_ffill = data.asfreq('W', method='ffill')
+print(weekly_ffill.head())
+
+# Plot weekly_fill starting 2015 here 
+weekly_ffill.loc['2015':].plot()
+plt.show()
+
+
