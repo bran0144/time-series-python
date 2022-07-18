@@ -311,3 +311,141 @@ weekly_ffill.loc['2015':].plot()
 plt.show()
 
 
+# Upsampling and interpoliation with .resample()
+# works similar to groupby()
+# groups data within resampling period and applies one or more methods to each group
+# can be used to fill or interpolate values during upsampling
+# or for applying aggregation for downsampling
+
+unrate = pd.read_csv('unrate.csv', parse_dates['Date'], index_col='Date')
+
+# resampling creates new date for frequency offset
+# resample can assign a frequency if none exists 
+# Calendar Month End    'M' 
+# Calendar Month Start  'MS' 
+# Business Month End    'BM'    may deviate based on weekends or holidays
+# Business Month Start  'BMS' 
+
+unrate.asfreq('MS').info()
+unrate.resample('MS')   #creates a Resampler object
+unrate.asfreq('MS').equals(unrate.resample('MS').asfreq())  #returns true
+
+# resample only returns data when calling another method
+gdp_1 = gdp.resample('MS').ffill().add_suffix('ffill')
+gdp_2 = gdp.resample('MS').interpolate().add_suffix('_inter')
+df1 = pd.DataFrame([1,2,3], columns=['df1'])
+df2 = pd.DataFrame([4,5,6], columns=['df2'])
+pd.concat([df1, df2])
+pd.concat([df1, df2], axis=1)  #concats the DF's horizontally, alinging the row index
+
+# Exercises:
+# Inspect data here
+print(monthly.info())
+
+# Create weekly dates
+weekly_dates = pd.date_range(start=monthly.index.min(), end=monthly.index.max(), freq='W')
+
+# Reindex monthly to weekly data
+weekly = monthly.reindex(weekly_dates)
+
+# Create ffill and interpolated columns
+weekly['ffill'] = weekly.UNRATE.ffill()
+weekly['interpolated'] = weekly.UNRATE.interpolate()
+
+# Plot weekly
+weekly.plot()
+plt.show()
+
+# Import & inspect data here
+data = pd.read_csv('debt_unemployment.csv', parse_dates=['date'], index_col='date')
+print(data.info())
+
+# Interpolate and inspect here
+interpolated = data.interpolate()
+print(interpolated.info())
+
+# Plot interpolated data here
+interpolated.plot(secondary_y='Unemployment')
+plt.show()
+
+# downsampling (day to month, hour to day)
+# how to summarize existing data
+ozone = ozone.resample('D').asfreq()
+ozone.reample('M').mean().head()    #creates monthly freq with default month-end offset with monthly average
+
+# can use more than one agg method
+ozone.resample('M').agg(['mean', 'std']).head()
+
+ozone = ozone.loc['2016':]
+ax = ozone.plot()
+monthly = ozone.resample('M').mean()
+monthly.add_suffix('_monthly').plot(ax=ax)
+
+data = pd.read_csv('ozone_pm25.csv', parse_dates=['date'], index_col='date')
+data = data.resample('D').asfreq()
+
+data = data.resample('BM').mean()
+
+df.resample('M').first().head(4)
+df.resample('MS').first().head(4)
+
+# Exercises
+# Import and inspect data here
+ozone = pd.read_csv('ozone.csv', parse_dates=['date'], index_col='date')
+ozone.info()
+
+
+# Calculate and plot the weekly average ozone trend
+ozone.resample('W').mean().plot()
+plt.show()
+
+# Calculate and plot the monthly average ozone trend
+ozone.resample('M').mean().plot()
+plt.show()
+
+# Calculate and plot the annual average ozone trend
+ozone.resample('A').mean().plot()
+plt.show()
+
+# Import and inspect data here
+stocks = pd.read_csv('stocks.csv', parse_dates=['date'], index_col='date')
+print(stocks.info())
+
+# Calculate and plot the monthly averages
+monthly_average = stocks.resample('M').mean()
+monthly_average.plot(subplots=True)
+plt.show()
+
+# Import and inspect gdp_growth here
+gdp_growth = pd.read_csv('gdp_growth.csv', parse_dates=['date'], index_col='date')
+gdp_growth.info()
+
+# Import and inspect djia here
+djia = pd.read_csv('djia.csv', parse_dates=['date'], index_col='date')
+djia.info()
+
+# Calculate djia quarterly returns here 
+djia_quarterly = djia.resample('QS').first()
+djia_quarterly_return = djia_quarterly.pct_change().mul(100)
+
+# Concatenate, rename and plot djia_quarterly_return and gdp_growth here 
+data = pd.concat([gdp_growth, djia_quarterly_return], axis=1)
+data.columns = ['gdp', 'djia']
+
+data.plot()
+plt.show()
+
+# Import data here
+sp500 = pd.read_csv('sp500.csv', parse_dates=['date'], index_col='date')
+sp500.info()
+
+# Calculate daily returns here
+daily_returns = sp500.squeeze().pct_change()
+
+# Resample and calculate statistics
+stats = daily_returns.resample('M').agg(['mean', 'median', 'std'])
+
+# Plot stats here
+stats.plot()
+plt.show()
+
