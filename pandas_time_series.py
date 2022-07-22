@@ -449,3 +449,81 @@ stats = daily_returns.resample('M').agg(['mean', 'median', 'std'])
 stats.plot()
 plt.show()
 
+# Rolling windows functions
+# Calculate metrics for subperiods inside the window
+# creates a new time series of metrics (a summary of several data poitns in the original time series)
+# Two types:
+    # rolling - same size, slides over the times series 
+    # expanding - grow with the tiem series and contain all prior values
+# Calculating a rolling average:
+data.rolling(window=30).mean()
+
+# window = # of business days
+# mean will only be calculated if the winosw has no missing values
+# can change that by making the min_periods parameter smaller than the window
+data.rolling(window='30D').mean()
+# this means calendar days
+
+r90 = data.rolling(window='90D').mean()
+google.join(r90.add_suffix('_mean_90')).plot()
+
+data['mean90'] = r90
+r360 = data['price'].rolling(window='360D').mean()
+data['mean360'] = r360; data.plot()
+
+# can do multiple rolling metrics
+r = data.price.rolling('90D').agg(['mean', 'std'])
+r.plot(subplots=True)
+
+# or like this:
+rolling = data.google.rolling('360D')
+q10 = rolling.quantile(0.1).to_frame('q10')
+median = rolling.median().to_frame('median')
+q90 = rolling.quantile(0.9).to_frame('q90')
+pd.concat([q10, median, q90], axis=1).plot()
+
+
+# Exercises
+
+# Import and inspect ozone data here
+data = pd.read_csv('ozone.csv', parse_dates=['date'], index_col='date')
+print(data.info())
+
+# Calculate 90d and 360d rolling mean for the last price
+data['90D'] = data['Ozone'].rolling(window='90D').mean()
+data['360D'] = data['Ozone'].rolling(window='360D').mean()
+
+# Plot data
+data['2010':].plot(title='New York City')
+plt.show()
+
+# Import and inspect ozone data here
+data = pd.read_csv('ozone.csv', parse_dates=['date'], index_col='date').dropna()
+
+# Calculate the rolling mean and std here
+rolling_stats = data.Ozone.rolling(360).agg(['mean', 'std'])
+
+# Join rolling_stats with ozone data
+stats = data.join(rolling_stats)
+
+# Plot stats
+stats.plot(subplots=True);
+plt.show()
+
+# Resample, interpolate and inspect ozone data here
+data = data.resample('D').interpolate()
+print(data.info())
+
+# Create the rolling window
+rolling = data.Ozone.rolling(360)
+
+# Insert the rolling quantiles to the monthly returns
+data['q10'] = rolling.quantile(0.1).to_frame('q10')
+data['q50'] = rolling.quantile(0.5).to_frame('q50')
+data['q90'] = rolling.quantile(0.9).to_frame('q90')
+
+# Plot the data
+data.plot(subplots=True)
+plt.show()
+
+# Expanding window functions
