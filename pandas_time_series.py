@@ -600,4 +600,86 @@ rolling_annual_returns = daily_returns.rolling('360D').apply(multi_period_return
 rolling_annual_returns.mul(100).plot()
 plt.show()
 
+# Using random walk to simulate daily stock price predictions
+from numpy.random import normal, seed 
+from scipy.stats import norm 
+seed(42)
+random_returns = normal(loc=0, scale=0.01, size=1000)
+sns.distplot(random_returns, fit=norm, kde=False)
+
+return_series = pd.Series(random_returns)
+random_prices = return_series.add(1).cumprod().sub(1)
+random_prices.mul(100).plot()
+
+data = pd.read_csv('sp500.csv', parse_dates=['date'], index_col='date')
+data['returns'] = data.SP500.pct_change()
+data.plot(subplots=True)
+
+sns.displot(data.returns.dropna().mul(100), fit=norm)
+
+from numpy.random import choice 
+sample = data.returns.dropna()
+n_obs = data.returns.count()
+random_walk = choice(sample, size=n_obs)
+random_walk = pd.Series(random_walk, index=sample.index)
+random_walk.head()
+
+start = data.SP500.first('D')
+sp500_random = start.append(random_walk.add(1))
+sp500_random.head()
+
+data['SP500_random'] = sp500_random.cumprod()
+data[['SP500', 'SP500_random']].plot()
+
+# Exercises
+# Set seed here
+seed(42)
+
+# Create random_walk
+random_walk = normal(loc=.001, scale=.01, size=2500)
+
+# Convert random_walk to pd.series
+random_walk = pd.Series(random_walk)
+
+# Create random_prices
+random_prices = random_walk.add(1).cumprod()
+
+# Plot random_prices here
+random_prices.mul(1000).plot()
+plt.show()
+
+# Set seed here
+seed(42)
+
+# Calculate daily_returns here
+daily_returns = fb.pct_change().dropna()
+
+# Get n_obs
+n_obs = daily_returns.count()
+
+# Create random_walk
+random_walk = choice(daily_returns, size=n_obs )
+
+# Convert random_walk to pd.series
+random_walk = pd.Series(random_walk)
+
+# Plot random_walk distribution
+sns.distplot(random_walk)
+plt.show()
+
+# Select fb start price here
+start = fb.price.first('D')
+
+# Add 1 to random walk and append to start
+random_walk = random_walk + 1
+random_price = start.append(random_walk)
+
+# Calculate cumulative product here
+random_price = random_price.cumprod()
+
+# Insert into fb and plot
+fb['random'] = random_price
+fb.plot()
+plt.show()
+
 
