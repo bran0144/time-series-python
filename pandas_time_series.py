@@ -527,3 +527,77 @@ data.plot(subplots=True)
 plt.show()
 
 # Expanding window functions
+# calculates emtrics for periods up to current date
+# new time series that reflects all historical values up to that point
+# good for running rate of return, running min/max
+# can either use .expanding() (works just like .rolling())
+# or use .cumsum(), .cumprod(), .cummin()/max()
+
+df = pd.DataFrame({'data': range(5)})
+df['expanding sum'] = df.data.expanding().sum()
+df['cumulative sum'] = df.data.cumsum()
+
+data = pd.read_csv('sp500.csv', parse_dates=['date'], index_col="date")
+# to calculate running rate of return
+pr = data.SP500.pct_change()
+pr_plus_one = pr.add(1)
+cumulative_return = pr_plus_one.cumprod().sub(1)
+cumulative_return.mul(100).plot()       #this makes a percentage and plots
+
+data['running_min'] = data.SP500.expanding().min()
+data['running_max'] = data.SP500.expanding().max()
+data.plot()
+
+def multi_period_return(period_returns):
+    return np.prod(period_returns + 1) -1
+
+pr = data.SP500.pct_change()
+r = pr.rolling('360D').apply(multi_period_return)
+data['Rolling 1 yr Return'] = r.mul(100)
+data.plot(subplots=True)
+
+# Exercises
+# Calculate differences
+differences = data.diff().dropna()
+
+# Select start price
+start_price = data.first('D')
+
+# Calculate cumulative sum
+cumulative_sum = start_price.append(differences).cumsum()
+
+# Validate cumulative sum equals data
+print(data.equals(cumulative_sum))
+
+# Define your investment
+investment = 1000
+
+# Calculate the daily returns here
+returns = data.pct_change()
+
+# Calculate the cumulative returns here
+returns_plus_one = returns.add(1)
+cumulative_return = returns_plus_one.cumprod()
+
+# Calculate and plot the investment return here 
+cumulative_return.mul(investment).plot()
+plt.show()
+
+# Import numpy
+import numpy as np
+
+# Define a multi_period_return function
+def multi_period_return(period_returns):
+    return np.prod(period_returns + 1) -1
+    
+# Calculate daily returns
+daily_returns = data.pct_change()
+
+# Calculate rolling_annual_returns
+rolling_annual_returns = daily_returns.rolling('360D').apply(multi_period_return)
+
+# Plot rolling_annual_returns
+rolling_annual_returns.mul(100).plot()
+plt.show()
+
+
