@@ -682,4 +682,87 @@ fb['random'] = random_price
 fb.plot()
 plt.show()
 
+# Correlation - measures linear relationships
+# correlation coefficient - how similar is the pairwise movement of two variables around their averages
+# between -1 and 1
+# the closer to 1 or -1, the more linear the relationship
+
+data = pd.read_csv('assets.csv', parse_dates=['date'], index_col='date')
+data = data.dropna().info()
+daily_returns = data.pct_change()
+sns.jointplot(x='sp500', y='nasdaq', data=daily_returns)
+
+correlations = returns.corr()
+sns.heatmap(correlations, annot=True)
+
+# Exercises
+# Inspect data here
+print(data.info())
+
+# Calculate year-end prices here
+annual_prices = data.resample('A').last()
+
+# Calculate annual returns here
+annual_returns = annual_prices.pct_change()
+
+# Calculate and print the correlation matrix here
+correlations = annual_returns.corr()
+print(correlations)
+
+# Visualize the correlations as heatmap here
+sns.heatmap(correlations, annot=True)
+plt.show()
+
+# Manipulating time series data
+# Value weighted index
+# share price * number of shares => market value
+# Larger companies have a larger weight and will have a larger impact on index
+
+nyse = pd.read_csv('listings.xlsx', sheet_name='nyse', na_values='n/a')
+nyse.set_index('Stock Symbol', inplace=True)
+nyse.dropna(subset=['Sector'], inplace=True)
+nyse['Market Capitalization'] /= 1e6
+components = nyse.groupby(['Sector'])['Market Capitalization'].nlargest(1)
+components.sort_values(ascending=False)
+tickers = components.index.get_level_values('Stock Symbol')
+tickers.tolist()
+
+columns = ['Company Name', 'Market Capitalization', 'Last Sale']
+component_info = nyse.loc[tickers, columns]
+pd.options.display.float_format = '{:,.2f}'.format  
+
+data = pd.read_csv('stocks.csv', parse_dates=["Date"], index_col='Date').loc[:, tickers.tolist()]
+
+# Exercises
+# Inspect listings
+print(listings.info())
+
+# Move 'stock symbol' into the index
+listings.set_index('Stock Symbol', inplace=True)
+
+# Drop rows with missing 'sector' data
+listings.dropna(subset=['Sector'], inplace=True)
+
+# Select companies with IPO Year before 2019
+listings = listings[listings['IPO Year'] < 2019]
+
+# Inspect the new listings data
+print(listings.info())
+
+# Show the number of companies per sector
+print(listings.groupby('Sector').size().sort_values(ascending=False))
+
+# Select largest company for each sector
+components = listings.groupby(['Sector'])['Market Capitalization'].nlargest(1)
+
+# Print components, sorted by market cap
+print(components.sort_values(ascending=False))
+
+# Select stock symbols and print the result
+tickers = components.index.get_level_values('Stock Symbol')
+print(tickers)
+
+# Print company name, market cap, and last price for each component 
+info_cols = ['Company Name', 'Market Capitalization', 'Last Sale']
+print(listings.loc[tickers, info_cols].sort_values('Market Capitalization', ascending=False))
 
