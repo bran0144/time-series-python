@@ -766,3 +766,122 @@ print(tickers)
 info_cols = ['Company Name', 'Market Capitalization', 'Last Sale']
 print(listings.loc[tickers, info_cols].sort_values('Market Capitalization', ascending=False))
 
+# Print tickers
+print(tickers)
+
+# Import prices and inspect result
+stock_prices = pd.read_csv('stock_prices.csv', parse_dates=['Date'], index_col='Date')
+print(stock_prices.info())
+
+# Calculate the returns
+price_return = stock_prices.iloc[-1].div(stock_prices.iloc[0]).sub(1).mul(100)
+
+# Plot horizontal bar chart of sorted price_return   
+price_return.sort_values().plot(kind='barh', title='Stock Price Returns')
+plt.show()
+
+# number of shares
+shares = components['Market Capitalization'].div(components['Last Sale'])
+
+data = pd.read_csv('stocks.csv', parse_dates=['Date'], index_col='Date').loc[:, tickers.tolist()]
+market_cap_series = data.mul(no_shares)
+market_cap_series.first('D').append(market_cap_series.last('D'))
+
+agg_mcap = market_cap_series.sum(axis=1)  #total market cap
+agg_mcap(title='Aggregate Market Cap')
+
+index = agg_mcap.div(agg_mcap.iloc[0]).mul(100) #creates value based index
+index.plot(title='Market-Cap Weighted Index')
+
+# Inspect listings and print tickers
+print(listings.info())
+print(tickers)
+
+# Select components and relevant columns from listings
+components = listings.loc[tickers, ['Market Capitalization', 'Last Sale']]
+
+# Print the first rows of components
+print(components.head())
+
+# Calculate the number of shares here
+no_shares = components['Market Capitalization'].div(components['Last Sale'])
+
+# Print the sorted no_shares
+print(no_shares.sort_values(ascending=False))
+
+# Select the number of shares
+no_shares = components['Number of Shares']
+print(no_shares.sort_values())
+
+# Create the series of market cap per ticker
+market_cap = stock_prices.mul(no_shares)
+
+# Select first and last market cap here
+first_value = market_cap.iloc[0]
+last_value = market_cap.iloc[-1]
+
+# Concatenate and plot first and last market cap here
+pd.concat([first_value, last_value], axis=1).plot(kind='barh')
+plt.show()
+
+# Aggregate and print the market cap per trading day
+raw_index = market_cap_series.sum(axis=1)
+print(raw_index)
+
+# Normalize the aggregate market cap here 
+index = raw_index.div(raw_index.iloc[0]).mul(100)
+print(index)
+
+# Plot the index here
+index.plot(title='Market-Cap Weighted Index')
+plt.show()
+
+# Evaluated index performance
+# look at index return
+# performance vs. benchmakr
+
+agg_market_cap = market_cap_series.sum(axis=1)
+index = agg_market_cap.div(agg_market_cap.iloc[0]).mul(100)
+index.plot(title='Market-Cap Weighted Index')
+
+agg_market_cap.ilocc[-1] - agg_market_cap.iloc[0]
+
+# Value contribution by stock
+change = market_cap_series.first('D').append(market_cap_series.last('D'))
+change.diff().iloc[-1].sort_values()
+
+market_cap = components['Market Capitalization']
+weights = market_cap.div(market_cap.sum())
+weights.sort_values().mul(100)
+# Value weighted component returns
+index_return = (index.iloc[-1] / index.iloc[0] -1) * 100
+weighted_returns = weights.mul(index_return)
+weighted_returns.sort_values().plot(kind='barh')
+
+# performance vs benchmark
+data = index.to_frame('Index')
+data['SP500'] = pd.read_csv('sp500.csv', parse_dates=['Date'], index_col='Date')
+data.SP500 = data.SP500.div(data.SP500.iloc[0], axis=0).mul(100)
+
+def multi_period_return(r):
+    return (np.prod(r +1) -1) * 100
+data.pct_change().rolling('30D').apply(multi_period_return).plot()
+
+# Calculate and print the index return here
+index_return = (index.iloc[-1] / index.iloc[0] -1) * 100
+print(index_return)
+
+# Select the market capitalization
+market_cap = components['Market Capitalization']
+
+# Calculate the total market cap
+total_market_cap = market_cap.sum()
+
+# Calculate the component weights, and print the result
+weights = market_cap.div(total_market_cap)
+print(weights.sort_values())
+
+# Calculate and plot the contribution by component
+weights.mul(index_return).sort_values().plot(kind='barh')
+plt.show()
+
