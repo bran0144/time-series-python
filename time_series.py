@@ -177,4 +177,81 @@ yearly_diff = yearly_rates.diff()
 autocorrelation_yearly = yearly_diff['US10Y'].autocorr()
 print("The autocorrelation of annual interest rate changes is %4.2f" %(autocorrelation_yearly))
 
-# Autocorrelation Function
+# Autocorrelation Function (ACF)
+# can see which lags have the most autocorrelation
+# good for finding a parsimonious model for fitting the data
+
+from statsmodels.graphics.tsaplots import plot_acf
+plot_acf(x, lags=20, alpha=0.05) #x is a series or array
+#lags = how many lags of the acf will be plotted
+#alpha = width of the confidence interval
+#alpha = 0.05 - 5% chance that if true autocorrelation is zero, it will fall 
+    #outside blue band
+#confidence bands are wider if alpha is lower or if you have fewer observations
+#if you don't want to see confidence intervals, set alpha=1
+#if you don't want to plot it, but see the numbers:
+print(acf(x))
+
+# Exercises
+# Import the acf module and the plot_acf module from statsmodels
+from statsmodels.tsa.stattools import acf
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Compute the acf array of HRB
+acf_array = acf(HRB)
+print(acf_array)
+
+# Plot the acf function
+plot_acf(HRB, alpha=1)
+plt.show()
+
+# Import the plot_acf module from statsmodels and sqrt from math
+from statsmodels.graphics.tsaplots import plot_acf
+from math import sqrt
+
+# Compute and print the autocorrelation of MSFT weekly returns
+autocorrelation = returns['Adj Close'].autocorr()
+print("The autocorrelation of weekly MSFT returns is %4.2f" %(autocorrelation))
+
+# Find the number of observations by taking the length of the returns DataFrame
+nobs = len(returns)
+
+# Compute the approximate confidence interval
+conf = 1.96/sqrt(nobs)
+print("The approximate confidence interval is +/- %4.2f" %(conf))
+
+# Plot the autocorrelation function with 95% confidence intervals and 20 lags using plot_acf
+plot_acf(returns, alpha=0.05, lags=20)
+plt.show()
+
+# White Noise
+    # constant mean
+    #constant variance
+    # zero autocorrelations at all lags
+# Special cases:
+    # if data has normal distribution: Gaussian White Noise
+noise = np.random.normal(loc=0, scale=1, size=500)
+# loc = mean, scale = std dev
+#autocorrelations of white noise series = 0
+
+# Import the plot_acf module from statsmodels
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Simulate white noise returns
+returns = np.random.normal(loc=0.02, scale=0.05, size=1000)
+
+# Print out the mean and standard deviation of returns
+mean = np.mean(returns)
+std = np.std(returns)
+print("The mean is %5.3f and the standard deviation is %5.3f" %(mean,std))
+
+# Plot returns series
+plt.plot(returns)
+plt.show()
+
+# Plot autocorrelation function of white noise returns
+plot_acf(returns, lags=20)
+plt.show()
+
+#Random Walk
+# Today's price = Yesterday's price + noise
