@@ -885,3 +885,91 @@ print(weights.sort_values())
 weights.mul(index_return).sort_values().plot(kind='barh')
 plt.show()
 
+# Calculate and print the index return here
+index_return = (index.iloc[-1] / index.iloc[0] -1) * 100
+print(index_return)
+
+# Select the market capitalization
+market_cap = components['Market Capitalization']
+
+# Calculate the total market cap
+total_market_cap = market_cap.sum()
+
+# Calculate the component weights, and print the result
+weights = market_cap.div(total_market_cap)
+print(weights.sort_values())
+
+# Calculate and plot the contribution by component
+weights.mul(index_return).sort_values().plot(kind='barh')
+plt.show()
+
+# Inspect data
+print(data.info())
+print(data.head())
+
+# Create multi_period_return function here
+def multi_period_return(r):
+    return (np.prod(r + 1) -1) * 100
+
+# Calculate rolling_return_360
+rolling_return_360 = data.pct_change().rolling('360D').apply(multi_period_return)
+
+# Plot rolling_return_360 here
+rolling_return_360.plot(title='Rolling 360D Return')
+plt.show()
+
+# Index Correlation
+data = DataReader(tickers, 'google', start='2016', end='2017')['Close']
+data.info()
+
+daily_returns = data.pct_change()
+correlations = daily_returns.corr()
+sns.heatmap(correlations, annot=True)
+plt.xticks(rotation=45)
+plt.title('Daily Return Correlations')
+
+# Saving to Excel
+correlations.to_excel(excel_writer = 'correlations.xls',
+    sheet_name='corrrelations',
+    startrow=1,
+    startcol=1)
+
+# Saving to multiple worksheets
+data.index = data.index.date
+with pd.Excel_writer('stock_data.xlsx') as writer:
+    corr.to_excel(excel_writer=writer, sheet_name='correlations')
+    data.to_excel(excel_writer=writer, sheet_name='prices')
+    data.pct_change.to_excel(excel_writer=writer, sheet_name='returns')
+
+# Exercises
+# Inspect stock_prices here
+print(stock_prices.info())
+
+# Calculate the daily returns
+returns = stock_prices.pct_change()
+
+# Calculate and print the pairwise correlations
+correlations = returns.corr()
+print(correlations)
+
+# Plot a heatmap of daily return correlations
+sns.heatmap(correlations, annot=True)
+plt.title('Daily Returns Correlations')
+plt.show()
+
+# Inspect index and stock_prices
+print(index.info())
+print(stock_prices.info())
+
+# Join index to stock_prices, and inspect the result
+data = stock_prices.join(index)
+print(data.info())
+
+# Create index & stock price returns
+returns = data.pct_change()
+
+# Export data and data as returns to excel
+with pd.ExcelWriter('data.xls') as writer:
+    data.to_excel(excel_writer=writer, sheet_name='data')
+    returns.to_excel(excel_writer=writer, sheet_name='returns')
+
