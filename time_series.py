@@ -255,3 +255,169 @@ plt.show()
 
 #Random Walk
 # Today's price = Yesterday's price + noise
+# change in price is just random noise
+# You can't forecast a random walk - best forecast for tomorrow's price
+    #is today's price
+# Random walk with drift - they drift by mu every period
+# Change in price is still white noise with a mean of mu
+# Statistical test for Random Walk
+# regress the difference in prices on the lagged price, and test if it is zero
+# this is called an augmented dickey-fuller test
+results = adfuller(df['SPX'])
+print(results[1])  #prints p value
+#if p values is less than 5%, we can reject the null hypothesis
+
+# Exercises:
+
+# Generate 500 random steps with mean=0 and standard deviation=1
+steps = np.random.normal(loc=0, scale=1, size=500)
+
+# Set first element to 0 so that the first price will be the starting stock price
+steps[0]=0
+
+# Simulate stock prices, P with a starting price of 100
+P = 100 + np.cumsum(steps)
+
+# Plot the simulated stock prices
+plt.plot(P)
+plt.title("Simulated Random Walk")
+plt.show()
+
+# Generate 500 random steps
+steps = np.random.normal(loc=0.001, scale=0.01, size=500) + 1
+
+# Set first element to 1
+steps[0]=1
+
+# Simulate the stock price, P, by taking the cumulative product
+P = 100 * np.cumprod(steps)
+
+# Plot the simulated stock prices
+plt.plot(P)
+plt.title("Simulated Random Walk with Drift")
+plt.show()
+
+# Import the adfuller module from statsmodels
+from statsmodels.tsa.stattools import adfuller
+
+# Run the ADF test on the price series and print out the results
+results = adfuller(AMZN['Adj Close'])
+print(results)
+
+# Just print out the p-value
+print('The p-value of the test on prices is: ' + str(results[1]))
+
+# Import the adfuller module from statsmodels
+from statsmodels.tsa.stattools import adfuller
+
+# Create a DataFrame of AMZN returns
+AMZN_ret = AMZN.pct_change()
+
+# Eliminate the NaN in the first row of returns
+AMZN_ret = AMZN_ret.dropna()
+
+# Run the ADF test on the return series and print out the p-value
+results = adfuller(AMZN_ret['Adj Close'])
+print('The p-value of the test on returns is: ' + str(results[1]))
+
+#Stationarity
+# Strong Stationarity - 
+    # entire distribution of data is time-invariant (not dependent on time)
+    # hard to test
+#easier to test for weak stationarity
+    # mean, variance, and autocorrelation are time invariant
+# If a process is not stationary, then the parameters are different at each 
+    #point in time, then there are too many parameters to estimate
+# You might end up with more parameters than actual data
+# Stationarity is necessary for a parsimonious model
+# Random walk is a common type of non-staitonary series
+# Seasonal series are non stationary
+# Can transform nonstationary into stationary
+    #take the first differences
+SPY.diff()
+#can get rid of specific seasonal difference by adding lag of 4
+HRB.diff(4)
+#can use log and diff together (bc of exponential growth and seasonality)
+np.log(AMZN).diff(4)
+#white noise is stationary
+
+# Exercises:
+
+# Import the plot_acf module from statsmodels
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Seasonally adjust quarterly earnings
+HRBsa = HRB.diff(4)
+
+# Print the first 10 rows of the seasonally adjusted series
+print(HRBsa.head(10))
+
+# Drop the NaN data in the first four rows
+HRBsa = HRBsa.dropna()
+
+# Plot the autocorrelation function of the seasonally adjusted series
+plot_acf(HRBsa)
+plt.show()
+
+# AR Model
+# Autoregressive model
+#today's value = mean + fraction phi of yesterday's value + noise
+# since it is only lagged by one this is called:
+    #AR model of order 1 or AR(1) model
+# If AR parameter phi =1 then the process is a random walk
+# If phi =0 then the process is white noise
+# for stationarity -1 < phi < 1
+# if phi is negative, then a postive return last period at time t-1, 
+    # implies that this periods return is more likely to be negative
+    #aka mean reversion
+# if phi is positive, then a positive return last period at time t-1,
+    #implies that this periods returns is more likely to be positive
+    #aka momentum
+# AR(1) autocorrelation decays exponentially at a rate of phi
+# Can help to work with simulated data to udnerstand AR process    
+
+from statsmodels.tsa.arima_process import ArmaProcess
+ar = np.array([1, -0.9])
+ma = np.array([1])
+AR_object = ArmaProcess(ar, ma)
+simulated_data = AR_object.generate_sample(nsample=1000)
+plt.plot(simulated_data)
+
+#phi is positive, but we need the sin so phi=0.9, sin = -0.9
+
+# Exercises:
+# import the module for simulating data
+from statsmodels.tsa.arima_process import ArmaProcess
+
+# Plot 1: AR parameter = +0.9
+plt.subplot(2,1,1)
+ar1 = np.array([1, -0.9])
+ma1 = np.array([1])
+AR_object1 = ArmaProcess(ar1, ma1)
+simulated_data_1 = AR_object1.generate_sample(nsample=1000)
+plt.plot(simulated_data_1)
+
+# Plot 2: AR parameter = -0.9
+plt.subplot(2,1,2)
+ar2 = np.array([1, 0.9])
+ma2 = np.array([1])
+AR_object2 = ArmaProcess(ar2, ma2)
+simulated_data_2 = AR_object2.generate_sample(nsample=1000)
+plt.plot(simulated_data_2)
+plt.show()
+
+# Import the plot_acf module from statsmodels
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Plot 1: AR parameter = +0.9
+plot_acf(simulated_data_1, alpha=1, lags=20)
+plt.show()
+
+# Plot 2: AR parameter = -0.9
+plot_acf(simulated_data_2, alpha=1, lags=20)
+plt.show()
+
+# Plot 3: AR parameter = +0.3
+plot_acf(simulated_data_3, alpha=1, lags=20)
+plt.show()
+
