@@ -421,3 +421,313 @@ plt.show()
 plot_acf(simulated_data_3, alpha=1, lags=20)
 plt.show()
 
+from statusmodels.tsa.arima_mmodel import ARMA 
+mod = ARMA(simulated_data, order=(1,0))
+result = mod.fit()
+print(result.summary())
+print(result.params)
+
+# Forecasting an AR Model
+mod = ARMA(simulated_data, order=(1,0))
+res = mod.fit()
+res.plot_predict(start='2016-07-01', end='2017-06-01')
+plt.show()
+
+# Exercises:
+# Import the ARMA module from statsmodels
+from statsmodels.tsa.arima_model import ARMA
+
+# Fit an AR(1) model to the first simulated data
+mod = ARMA(simulated_data_1, order=(1,0))
+res = mod.fit()
+
+# Print out summary information on the fit
+print(res.summary())
+
+# Print out the estimate for the constant and for phi
+print("When the true phi=0.9, the estimate of phi (and the constant) are:")
+print(res.params)
+
+# Import the ARMA module from statsmodels
+from statsmodels.tsa.arima_model import ARMA
+
+# Forecast the first AR(1) model
+mod = ARMA(simulated_data_1, order=(1,0))
+res = mod.fit()
+res.plot_predict(start=990, end=1010)
+plt.show()
+
+# Import the ARMA module from statsmodels
+from statsmodels.tsa.arima_model import ARMA
+
+# Forecast interest rates using an AR(1) model
+mod = ARMA(interest_rate_data, order=(1,0))
+res = mod.fit()
+
+# Plot the original series and the forecasted series
+res.plot_predict(start=0, end='2022')
+plt.legend(fontsize=8)
+plt.show()
+
+# Import the plot_acf module from statsmodels
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Plot the interest rate series and the simulated random walk series side-by-side
+fig, axes = plt.subplots(2,1)
+
+# Plot the autocorrelation of the interest rate series in the top plot
+fig = plot_acf(interest_rate_data, alpha=1, lags=12, ax=axes[0])
+
+# Plot the autocorrelation of the simulated random walk series in the bottom plot
+fig = plot_acf(simulated_data, alpha=1, lags=12, ax=axes[1])
+
+# Label axes
+axes[0].set_title("Interest Rate Data")
+axes[1].set_title("Simulated Random Walk Data")
+plt.show()
+
+# PACF - Partial autocorrelation Function
+# Lets you add another lag
+# Phi  4,4, - PACF and it representats how significant adding a fourth lag is when you already have three lags
+# similar python to acf
+from statsmodels.graphics.tsaplots import plot_pacf
+
+plot_pacf(x, lags=20, alpha=0.5)
+# x is the series or array, lags is the # of lags pacf to be plotted, alpha is the width of the conf interval
+
+# Information Criteria - adjusts the goodness of fit for number of parameters (to avoid overfitting)
+# Goodness of fit measures:
+    # AIC (Akaike Information Criterion)
+    # BIC (Bayesian Information Criterion)
+from statsmodels.tsa.arima_mmodel import ARIMA 
+mod = ARIMA(simulated_data, order=(1,0))
+result = mod.fit()
+
+result.summary()
+result.params
+result.aic 
+result.bic 
+
+# you want to pick one with the lowest information criterion
+
+# Exercises
+
+# Import the modules for simulating data and for plotting the PACF
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.graphics.tsaplots import plot_pacf
+
+# Simulate AR(1) with phi=+0.6
+ma = np.array([1])
+ar = np.array([1, -0.6])
+AR_object = ArmaProcess(ar, ma)
+simulated_data_1 = AR_object.generate_sample(nsample=5000)
+
+# Plot PACF for AR(1)
+plot_pacf(simulated_data_1, lags=20)
+plt.show()
+
+# Simulate AR(2) with phi1=+0.6, phi2=+0.3
+ma = np.array([1])
+ar = np.array([1, -0.6, -0.3])
+AR_object = ArmaProcess(ar, ma)
+simulated_data_2 = AR_object.generate_sample(nsample=5000)
+
+# Plot PACF for AR(2)
+plot_pacf(simulated_data_2, lags=20)
+plt.show()
+
+# Import the module for estimating an ARIMA model
+from statsmodels.tsa.arima.model import ARIMA
+
+# Fit the data to an AR(p) for p = 0,...,6 , and save the BIC
+BIC = np.zeros(7)
+for p in range(7):
+    mod = ARIMA(simulated_data_2, order=(p,0,0))
+    res = mod.fit()
+# Save BIC for AR(p)    
+    BIC[p] = res.bic
+    
+# Plot the BIC as a function of p
+plt.plot(range(1,7), BIC[1:7], marker='o')
+plt.xlabel('Order of AR Model')
+plt.ylabel('Bayesian Information Criterion')
+plt.show()
+
+# MA - Moving Average Model
+# Rt = mu + Eta t + Theta Eta t-1
+# Today's noise = mean + Noise + fraction of yesterday's noise
+# MA(1) - only one lagged error on right hand side so it's an MA of order 1
+# If theta is 0, then the process is white noise
+# Stationary for all values of theta
+# Negative theta - one period mean reversion
+# Postive theta - one period momentum
+# lag 1 autocoreelation is not theta, but theta over 1 plus theta squared
+
+from statsmodels.tsa.arima_process import ArmaProcess
+ar = np.array([1])
+ma = np.array([1,0.5])
+AR_object = ArmaProcess(ar, ma)
+simulated_data = AR_object.generate_sample(nsample=1000)
+plt.plot(simulated_data)
+
+# Don't need to reverse the sign of theta like you do with AR simulation
+
+# Exercises:
+# import the module for simulating data
+from statsmodels.tsa.arima_process import ArmaProcess
+
+# Plot 1: MA parameter = -0.9
+plt.subplot(2,1,1)
+ar1 = np.array([1])
+ma1 = np.array([1, -0.9])
+MA_object1 = ArmaProcess(ar1, ma1)
+simulated_data_1 = MA_object1.generate_sample(nsample=1000)
+plt.plot(simulated_data_1)
+
+# Plot 2: MA parameter = +0.9
+plt.subplot(2,1,2)
+ar2 = np.array([1])
+ma2 = np.array([1,0.9])
+MA_object2 = ArmaProcess(ar2, ma2)
+simulated_data_2 = MA_object2.generate_sample(nsample=1000)
+plt.plot(simulated_data_2)
+
+plt.show()
+
+
+# Import the plot_acf module from statsmodels
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Plot 1: MA parameter = -0.9
+plot_acf(simulated_data_1, lags=20)
+plt.show()
+
+# Plot 2: MA parameter = 0.9
+plot_acf(simulated_data_2, lags=20)
+plt.show()
+
+# Plot 3: MA parameter = -0.3
+plot_acf(simulated_data_3, lags=20)
+plt.show()
+
+# Estimation and Forecasting an MA Model
+
+from statsmodels.tsa.arima_mmodel import ARIMA 
+mod = ARIMA(simulated_data, order=(0,0,1))
+result = mod.fit()
+
+# Forecasting an MA model
+from statsmodels.graphics.tsaplots import plot_predict
+fig, ax = plt.subplots()
+data.plot(ax=ax)
+plot_predict(res, start='2012-09-27', end='2012-10-06', ax=ax)
+plt.show()
+
+# Exercises
+# Import the ARIMA module from statsmodels
+from statsmodels.tsa.arima.model import ARIMA
+
+# Fit an MA(1) model to the first simulated data
+mod = ARIMA(simulated_data_1, order=(0,0,1))
+res = mod.fit()
+
+# Print out summary information on the fit
+print(res.summary())
+
+# Print out the estimate for the constant and for theta
+print("When the true theta=-0.9, the estimate of theta is:")
+print(res.params[1])
+
+# Import the ARIMA and plot_predict from statsmodels
+from statsmodels.tsa.arima.model import ARIMA
+from statsmodels.graphics.tsaplots import plot_predict
+
+# Forecast the first MA(1) model
+mod = ARIMA(simulated_data_1, order=(0,0,1))
+res = mod.fit()
+
+# Plot the data and the forecast
+fig, ax = plt.subplots()
+simulated_data_1.loc[950:].plot(ax=ax)
+plot_predict(res, start=1000, end=1010, ax=ax)
+plt.show()
+
+# ARMA Models
+# combo of AR & MA model
+# Can be converted to pure AR or pure MA models
+
+# Exercises:
+# import datetime module
+import datetime
+
+# Change the first date to zero
+intraday.iloc[0,0] = 0
+
+# Change the column headers to 'DATE' and 'CLOSE'
+intraday.columns = ['DATE', 'CLOSE']
+
+# Examine the data types for each column
+print(intraday.dtypes)
+
+# Convert DATE column to numeric
+intraday['DATE'] = pd.to_numeric(intraday['DATE'])
+
+# Make the `DATE` column the new index
+intraday = intraday.set_index('DATE')
+
+# Notice that some rows are missing
+print("If there were no missing rows, there would be 391 rows of minute data")
+print("The actual length of the DataFrame is:", len(intraday))
+
+# Everything
+set_everything = set(range(391))
+
+# The intraday index as a set
+set_intraday = set(intraday.index)
+
+# Calculate the difference
+set_missing = set_everything - set_intraday
+
+# Print the difference
+print("Missing rows: ", set_missing)
+
+# Fill in the missing rows
+intraday = intraday.reindex(range(391), method='ffill')
+
+# From previous step
+intraday = intraday.reindex(range(391), method='ffill')
+
+# Change the index to the intraday times
+intraday.index = pd.date_range(start='2017-09-01 9:30', end='2017-09-01 16:00', freq='1min')
+
+# Plot the intraday time series
+intraday.plot(grid=True)
+plt.show()
+
+# From previous step
+intraday = intraday.reindex(range(391), method='ffill')
+
+# Change the index to the intraday times
+intraday.index = pd.date_range(start='2017-09-01 9:30', end='2017-09-01 16:00', freq='1min')
+
+# Plot the intraday time series
+intraday.plot(grid=True)
+plt.show()
+
+# import the modules for simulating data and plotting the ACF
+from statsmodels.tsa.arima_process import ArmaProcess
+from statsmodels.graphics.tsaplots import plot_acf
+
+# Build a list MA parameters
+ma = [.8**i for i in range(30)]
+
+# Simulate the MA(30) model
+ar = np.array([1])
+AR_object = ArmaProcess(ar, ma)
+simulated_data = AR_object.generate_sample(nsample=5000)
+
+# Plot the ACF
+plot_acf(simulated_data, lags=30)
+plt.show()
+
+
