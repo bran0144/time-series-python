@@ -832,3 +832,5 @@ plt.show()
 # Print the correlation between the seasonalities of the Government and Education & Health industries
 print(0.89)
 
+
+
