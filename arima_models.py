@@ -128,11 +128,13 @@ print(result_log)
 # AR = autoregressive model
 # AR(1): yt = a1yt-1 + Et
 # order of the model is the number of time lags used
+# lag coefficient for AR is used to multiply yt-1
 # AR(2):  yt = a1yt-1 + a2yt-2 + Et
 # a1 = autoregressive coefficient (in AR1 is just the slope of hte line)
 
 # MA = moving average - regresses the values of time series agsint the previous shock values of same time series
 # MA(1): yt = m1Et-1 + Et
+# lag coefficient for mA is sued to multiple Et-1
 # Et = shock term for current time step
 # MA(2): yt = m1Et-1 + m2Et-2 + Et
 
@@ -149,4 +151,116 @@ y = arma_generate_sample(ar_coefs, ma_coefs, nsample=100, scale=0.5)
 from statsmodels.tsa.arima.model import ARIMA
 model = ARIMA(y, order=(1,0,1))
 results = model.fit()
+
+# Import data generation function and set random seed
+from statsmodels.tsa.arima_process import arma_generate_sample
+np.random.seed(1)
+
+# Set coefficients
+ar_coefs = [1]
+ma_coefs = [1, -0.7]
+
+# Generate data
+y = arma_generate_sample(ar_coefs, ma_coefs, nsample=100, scale=0.5)
+
+plt.plot(y)
+plt.ylabel(r'$y_t$')
+plt.xlabel(r'$t$')
+plt.show()
+
+# Remember that the first value of each of the ar_coefs and ma_coefs lists should be 1 for the lag-0 coefficient.
+# Remember that an MA(1) model is just an ARMA(0,1) model. Therefore ma_coefs should have a lag-0 and a lag-1 coefficient and ar_coefs should only have a lag-0 coefficient and nothing else (e.g. ma_coefs = [1, ____] and ar_coefs = [1]).
+
+# Import data generation function and set random seed
+from statsmodels.tsa.arima_process import arma_generate_sample
+np.random.seed(2)
+
+# Set coefficients
+ar_coefs = [1, -0.3, -0.2]
+ma_coefs = [1]
+
+# Generate data
+y = arma_generate_sample(ar_coefs, ma_coefs, nsample=100, scale=0.5)
+
+plt.plot(y)
+plt.ylabel(r'$y_t$')
+plt.xlabel(r'$t$')
+plt.show()
+
+# Remember that for lags greater than zero, you need to pass the negative of the desired AR coefficient into the arma_generate_sample() function.
+
+# Import data generation function and set random seed
+from statsmodels.tsa.arima_process import arma_generate_sample
+np.random.seed(3)
+
+# Set coefficients
+ar_coefs = [1, 0.2]
+ma_coefs = [1, 0.3, 0.4]
+
+# Generate data
+y = arma_generate_sample(ar_coefs, ma_coefs, nsample=100, scale=0.5)
+
+plt.plot(y)
+plt.ylabel(r'$y_t$')
+plt.xlabel(r'$t$')
+plt.show()
+
+# Import the ARIMA model
+from statsmodels.tsa.arima.model import ARIMA
+
+# Instantiate the model
+model = ARIMA(y, order=(1,0,1))
+
+# Fit the model
+results = model.fit()
+
+# Fitting time series models
+from statsmodels.tsa.arima.model import ARIMA
+
+# ARMA(p,q)  p = autoregressive lags, q moving average lags
+model = ARIMA(y, order=(p,0,q))
+# if middle term is 0, that's just an ARMA model
+# data can be a DF, a pandas series, or numpy array
+results = model.fit()
+print(results.summary())
+
+# ARMAX - exogenous ARMA
+# uses external independent varialbes as well as time series
+# like a combo of ARMA model and normal linear regression
+
+# ARMA(1,1)  yt = a1yt-1 + m1Et-1 + Et
+# ARMAX(1,1) yt = x1zt + a1yt-1 + m1Et-1 + Et
+
+# Fitting ARMAX
+model = ARIMA(df['productivity'], order =(2,0,1), exog=df['hours_sleep'])
+results = model.fit()
+
+# Exercises
+
+# Instantiate the model
+model = ARIMA(sample['timeseries_1'], order=(2,0,0))
+
+# Fit the model
+results = model.fit()
+
+# Print summary
+print(results.summary())
+
+# Instantiate the model
+model = ARIMA(earthquake, order=(3,0,1))
+
+# Fit the model
+results = model.fit()
+
+# Print model fit summary
+print(results.summary())
+
+# Instantiate the model
+model = ARIMA(hospital['wait_times_hrs'], order=(2,0,1), exog=hospital['nurse_count'])
+
+# Fit the model
+results = model.fit()
+
+# Print model fit summary
+print(results.summary())
 
