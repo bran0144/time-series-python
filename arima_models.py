@@ -264,3 +264,156 @@ results = model.fit()
 # Print model fit summary
 print(results.summary())
 
+# One step ahead predictions
+results = model.fit()
+forecast = results.get_prediction(start=-25)
+mean_forecast = forecast.predicted_mean
+confidence_intervals = forecast.conf_int()
+plt.figure()
+plt.plot(dates, mean_forecast.values, color='red', label='forecast')
+plt.fill_between(dates, lower_limits, upper_limits, color='pink')
+plt.show()
+
+# Dynamic predictions
+# uses predicted value, to predict the next value and so on
+results.model.fit()
+forecast = results.get_prediction(start=-25, dynamic=True)
+mean_forecast = forecast.predicted_mean
+confidence_intervals = forecast.conf_int()
+
+# Forecasting out of sample
+forecast = results.get_forecast(steps=20)
+mean_forecast = forecast.predicted_mean
+confidence_intervals = forecast.conf_int()
+
+# Exercises:
+# Generate predictions
+one_step_forecast = results.get_prediction(start=-30)
+
+# Extract prediction mean
+mean_forecast = one_step_forecast.predicted_mean
+
+# Get confidence intervals of  predictions
+confidence_intervals = one_step_forecast.conf_int()
+
+# Select lower and upper confidence limits
+lower_limits = confidence_intervals.loc[:,'lower close']
+upper_limits = confidence_intervals.loc[:,'upper close']
+
+# Print best estimate  predictions
+print(mean_forecast)
+
+# plot the amazon data
+plt.plot(amazon.index, amazon, label='observed')
+
+# plot your mean predictions
+plt.plot(mean_forecast.index, mean_forecast, color='r', label='forecast')
+
+# shade the area between your confidence limits
+plt.fill_between(lower_limits.index, lower_limits,
+		 upper_limits, color='pink')
+
+# set labels, legends and show plot
+plt.xlabel('Date')
+plt.ylabel('Amazon Stock Price - Close USD')
+plt.legend()
+plt.show()
+
+# Generate predictions
+dynamic_forecast = results.get_prediction(start=-30, dynamic=True)
+
+# Extract prediction mean
+mean_forecast = dynamic_forecast.predicted_mean
+
+# Get confidence intervals of predictions
+confidence_intervals = dynamic_forecast.conf_int()
+
+# Select lower and upper confidence limits
+lower_limits = confidence_intervals.loc[:,'lower close']
+upper_limits = confidence_intervals.loc[:,'upper close']
+
+# Print best estimate predictions
+print(mean_forecast)
+
+# plot the amazon data
+plt.plot(amazon.index, amazon, label='observed')
+
+# plot your mean forecast
+plt.plot(mean_forecast.index, mean_forecast, color='r', label='forecast')
+
+# shade the area between your confidence limits
+plt.fill_between(lower_limits.index, lower_limits, 
+         upper_limits, color='pink')
+
+# set labels, legends and show plot
+plt.xlabel('Date')
+plt.ylabel('Amazon Stock Price - Close USD')
+plt.legend()
+plt.show()
+
+# ARIMA models
+# cannot apply an ARMA model to non-stationary time series
+# you need to take the difference of the time series to make it stationary
+# but then the forecast is trained on the difference and will predict the value
+# of the difference of the time series, we want the actual values
+# can transform the predictions of the differences (using cumulative sum, integral)
+diff_forecast = results.get_forecast(steps=10).predicted_mean
+from numpy import cumsum
+mean_forecast = cumsum(diff_forecast) + df.iloc[-1,0]
+
+# all of this can be done with ARIMA instead
+from statsmodels.tsa.arima.model import ARIMA
+model = ARIMA(df, order=(p,d,q))
+# p = number of autoregressive lags
+# d = order of dereferencing
+# q = moving average order
+model.fit()
+mean_forecast = results.get_forecast(steps=10).predicted_mean
+
+# Augmented Dickie Fuller test helps us determine how much difference order we need
+adf = adfuller(df.iloc[:,0])
+print('ADF Statistic:', adf[0])
+print('p-value:', adf[1])
+
+adf = adfuller(df.diff().dropna().iloc[:,0])
+print('ADF Statistic:', adf[0])
+print('p-value:', adf[1])
+
+# Exercises:
+# Take the first difference of the data
+amazon_diff = amazon.diff().dropna()
+
+# Create ARMA(2,2) model
+arma = ARIMA(amazon_diff, order=(2,0,2))
+
+# Fit model
+arma_results = arma.fit()
+
+# Print fit summary
+print(arma_results.summary())
+
+# Make arma forecast of next 10 differences
+arma_diff_forecast = arma_results.get_forecast(steps=10).predicted_mean
+
+# Integrate the difference forecast
+arma_int_forecast = np.cumsum(arma_diff_forecast)
+
+# Make absolute value forecast
+arma_value_forecast = arma_int_forecast + amazon.iloc[-1,0]
+
+# Print forecast
+print(arma_value_forecast)
+
+# Create ARIMA(2,1,2) model
+arima = ARIMA(amazon, order=(2,1,2))
+
+# Fit ARIMA model
+arima_results = arima.fit()
+
+# Make ARIMA forecast of next 10 values
+arima_value_forecast = arima_results.get_forecast(steps=10).predicted_mean
+
+# Print forecast
+print(arima_value_forecast)
+
+# ACF & PCF
