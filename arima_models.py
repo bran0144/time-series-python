@@ -416,4 +416,55 @@ arima_value_forecast = arima_results.get_forecast(steps=10).predicted_mean
 # Print forecast
 print(arima_value_forecast)
 
-# ACF & PCF
+# ACF & PACF
+# Model order is very important for the quality of the forecasts
+# ACF - autocorrelation function - lag-1 is the correlation of the time series
+    # and the same time series offset by one step
+# PACF - partial autocorrelation between a time series and lagged version of itself
+    # AFTER we subtract the ffect of correlation at smaller lags
+    # correlation associated with just that particular lag, not the others added to it
+# if amplitude of the ACF tails off with increasing lag and PACF cuts off after lag p,
+    # then we have an AR(p) model
+# if the amplitude of the ACF cuts off after lag q and the amplitude of the PACF tails off 
+    # then we have an MA(q) model
+# if both tail off then we have an ARMA model
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+fig, (ax1, ax2) = plt.subplots(2,1, figsize=(8.8))
+plot_acf(df, lags=10, zero=False, ax=ax1)
+plot_pacf(df, lags=10, zero=False, ax=ax2)
+plt.show()
+# if the acf values are high and tail off very slowly, this is a sign that the data is non-stationary
+    # so it needs to be differenced.
+# if the acf at lag-1 is very negative this is a sign we have taken the difference too many times
+
+# Exercises:
+# Import
+from statsmodels.graphics.tsaplots import plot_acf, plot_pacf
+
+# Create figure
+fig, (ax1, ax2) = plt.subplots(2,1, figsize=(12,8))
+ 
+# Plot the ACF of df
+plot_acf(df, lags=10, zero=False, ax=ax1)
+
+# Plot the PACF of df
+plot_pacf(df, lags=10, zero=False, ax=ax2)
+
+plt.show()
+
+# Create figure
+fig, (ax1, ax2) = plt.subplots(2,1, figsize=(12,8))
+
+# Plot ACF and PACF
+plot_acf(earthquake, lags=10, zero=False, ax=ax1)
+plot_pacf(earthquake, lags=10, zero=False, ax=ax2)
+
+# Show plot
+plt.show()
+
+# Instantiate model
+model = ARIMA(earthquake, order =(1,0,0))
+
+# Train model
+results = model.fit()
+
