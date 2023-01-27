@@ -468,3 +468,121 @@ model = ARIMA(earthquake, order =(1,0,0))
 # Train model
 results = model.fit()
 
+# AIC & BIC
+# Akaike Information Criterion - metric which tells us how good a model is
+# Lower AIC indicates a better model
+# Penalizes models with lots of parameters (simpler models are better)
+# helps prevent over fitting to the training data
+# better for predictive models
+
+# Bayesian Information Criterion
+# Lower BIC indicates a better model
+# Penalizes models with lots of parameters (simpler models are better) more than AIC
+# better for explanatory models
+
+# both are printed in the summary table
+
+model = ARIMA(df, ordered=(1,0,1))
+results = model.fit()
+print(results.summary())
+
+# can also print them out directly
+print('AIC: ', results.aic)
+print('BIC: ', results.bic)
+
+# we can write loops to fir multiple ARIMA models to a dataset, to find the best model order
+for p in range(3):
+    for q in range(3):
+        model = ARIMA(df, order=(p,0,q))
+        results = model.fit()
+        print(p,q, results.aic, results.bic)
+        # we can add them to a list and convert it into a DF later
+        order_aic_bic.append((p,q, results.aic, results.bic))
+
+order_df = pd.DataFrame(order_aic_bic, columns=['p', 'q', 'aic', 'bic'])
+# then we can sort my aic values
+print(order_df.sort_values('aic'))
+
+# Non stationary model orders & value errors
+# leads to a value error  - would result in a non-stationary set of AR coefficients
+# we want to skip over these errors, so we should use a try and except block
+for p in range(3):
+    for q in range(3):
+        try:
+            model = ARIMA(df, order=(p,0,q))
+            results = model.fit()
+            print(p,q, results.aic, results.bic)
+        except:
+            print(p,q, None, None)
+
+# Exercises       
+# Create empty list to store search results
+order_aic_bic=[]
+
+# Loop over p values from 0-2
+for p in range(3):
+  # Loop over q values from 0-2
+    for q in range(3):
+      	# create and fit ARMA(p,q) model
+        model = ARIMA(df, order=(p,0,q))
+        results = model.fit()
+        
+        # Append order and results tuple
+        order_aic_bic.append((p,q, results.aic, results.bic))
+
+# Construct DataFrame from order_aic_bic
+order_df = pd.DataFrame(order_aic_bic, 
+                        columns=['p', 'q', 'AIC', 'BIC'])
+
+# Print order_df in order of increasing AIC
+print(order_df.sort_values('AIC'))
+
+# Print order_df in order of increasing BIC
+print(order_df.sort_values('BIC'))
+
+# Loop over p values from 0-2
+for p in range(3):
+    # Loop over q values from 0-2
+    for q in range(3):
+      
+        try:
+            # create and fit ARMA(p,q) model
+            model = ARIMA(earthquake, order=(p,0,q))
+            results = model.fit()
+            
+            # Print order and results
+            print(p, q, results.aic, results.bic)
+            
+        except:
+            print(p, q, None, None)     
+
+# Model Diagnostics
+# focus on the residuals to the training data
+#  difference between our model's one step ahead predictions and the real values of the time series
+
+model = ARIMA(df, order=(p,d,q))
+results = model.fit()
+residuals = results.resid 
+# stored as a pandas series
+# Mean absolute error
+# how far our the predictions from the real values?
+mae = np.mean(np.abs(residuals))
+# an ideal model should be uncorreleated with white Gaussian noise centered on zero
+# creates the four diagnostic plots
+results.plot_diagnostics()
+plt.show()
+# Residuals plot - if model is working correctly, ther should be no obvious structure
+# Histogram plus estimated density plot (shows distribution of the residuals)
+    # orange line is smooth version of histogram, green line shows normal distribution.
+    # if the model is good, the orange and green line should be almost the same
+# Normal QQ plot
+    # another way to see the comparision between distribution of model residuals to normal distribution
+    # most values should lie along the line
+# Correlogram
+    # ACF plot of the residuals rather than the data
+    # if there is significant correlation in the residuals, it means that there is information
+    # in the data that the model hasn't captured
+# There are also test statistics in the results.summary() tables
+# Prob(Q) - p value for null hypothesis that residuals are uncorrelated
+# Prob(JB) - pvalue for null hypothesis that residuals are normally distributed
+# if either p value is less than 0.05, we reject the null hypothesis
