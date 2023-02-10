@@ -586,3 +586,104 @@ plt.show()
 # Prob(Q) - p value for null hypothesis that residuals are uncorrelated
 # Prob(JB) - pvalue for null hypothesis that residuals are normally distributed
 # if either p value is less than 0.05, we reject the null hypothesis
+
+# Exercises
+
+# Fit model
+model = ARIMA(earthquake, order=(1,0,1))
+results = model.fit()
+
+# Calculate the mean absolute error from residuals
+mae = np.mean(np.abs(results.resid))
+
+# Print mean absolute error
+print(mae)
+
+# Make plot of time series for comparison
+earthquake.plot()
+plt.show()
+
+# Create and fit model
+model1 = ARIMA(df, order=(3,0,1))
+results1 = model1.fit()
+
+# Print summary
+print(results1.summary())
+
+# Box-Jenkins method
+# To go from raw data to production model you need:
+    # identification, estimation, and model diagnostics
+    # Identification -  explore and characterize data to find which is appropriate for ARIMA
+        # is it stationary? what transfroms (differencing, log, etc.) will make it stationary?
+        # which orders of p,q, are the most promising? (plotting, adfuller())
+        # df.plot()
+        # adfuller()
+        # transforms (df.diff(), np.log(), np.sqrt())
+        # plot_acf(), plot_pacf()
+    # Estimation - use the data to train the model coefficients
+        # model.fit()
+        # choose between results.aic, restults.bic
+    # Model diagnostics
+        # are the residuals uncorrelated
+        # are they normally distributed
+        # results.plot_diagnostics()
+        # results.summary()
+    # Decision - 
+        # is the model good enough or do we need to go back and rework it?
+    # Production - ready to make forecasts
+        # results.get_forecast()
+
+# Exercises:
+
+# Plot time series
+savings.plot()
+plt.show()
+
+# Run Dicky-Fuller test
+result = adfuller(savings['savings'])
+
+# Print test statistic
+print(result[0])
+
+# Print p-value
+print(result[1])
+
+# Create figure
+fig, (ax1, ax2) = plt.subplots(2,1, figsize=(12,8))
+ 
+# Plot the ACF of savings on ax1
+plot_acf(savings, lags=10, zero=False, ax=ax1)
+
+# Plot the PACF of savings on ax2
+plot_pacf(savings, lags=10, zero=False, ax=ax2)
+
+plt.show()
+
+# Loop over p values from 0-3
+for p in range(4):
+  
+  # Loop over q values from 0-3
+    for q in range(4):
+      try:
+        # Create and fit ARMA(p,q) model
+        model = ARIMA(savings, order=(p,0,q))
+        results = model.fit()
+        
+        # Print p, q, AIC, BIC
+        print(p,q, results.aic, results.bic)
+        
+      except:
+        print(p, q, None, None)
+
+# Create and fit model
+model = ARIMA(savings, order=(1,0,2))
+results = model.fit()
+
+# Create the 4 diagostics plots
+results.plot_diagnostics()
+plt.show()
+
+# Print summary
+print(results.summary())
+
+# Seasonal Time Series
