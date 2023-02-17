@@ -687,3 +687,358 @@ plt.show()
 print(results.summary())
 
 # Seasonal Time Series
+    # predictable and repeated patterns
+    # time series = trend + seasonal + residual
+
+from statsmodels.tsa.seasonal import seasonal_decompose
+decomp_results = seasonal_decompose(df['IPG3113N'], period=12)
+
+# function returns a decompose-results object
+decomp_results.plot()
+plt.show()
+# plots observed, trend, seasonal, residual all on separate graphs
+# ACF may show a periodic correlation pattern
+# to find the period, we look for a lag greater than one, which is a peak in the ACF plot
+# if the time series is non-stationary, the ACF plot will be clearer if we detrend first
+
+# detrending long rolling average over N steps
+df = df - df.rolling(N).mean()
+# want N to a be a large window size
+df = df.dropna()
+# now plot the ACF
+fig, ax = plt.subplots(1,1,figsize=(8,4))
+plot_acf(df.dropna(), ax=ax, lags=25, zero=false)
+plt.show()
+
+
+# Exercises:
+# Import seasonal decompose
+from statsmodels.tsa.seasonal import seasonal_decompose
+
+# Perform additive decomposition
+decomp = seasonal_decompose(milk_production['pounds_per_cow'], 
+                            period=12)
+
+# Plot decomposition
+decomp.plot()
+plt.show()
+
+# Create figure and subplot
+fig, ax1 = plt.subplots()
+
+# Plot the ACF on ax1
+plot_acf(water['water_consumers'], lags=25, zero=False,  ax=ax1)
+
+# Show figure
+plt.show()
+
+# Subtract the rolling mean
+water_2 = water - water.rolling(15).mean()
+
+# Drop the NaN values
+water_2 = water_2.dropna()
+
+# Create figure and subplots
+fig, ax1 = plt.subplots()
+
+# Plot the ACF
+plot_acf(water_2['water_consumers'], lags=25, zero=False, ax=ax1)
+
+# Show figure
+plt.show()
+
+# SARIMA models - seasonal ARIMA models
+# how to use seasonality to make more accurate predictions
+# Non-seasonal orders (ARIMA)
+    # p:autoregressive order
+    # d:differencing order
+    # q:moving average order
+    # for an ARIMA(2,0,1):
+        # yt = a1yt-1 + a2yt-2 + m1Et-1 + Et
+# SARIMA(p,d,q)(P,D,Q)s
+    # P: seasonal autoregressive order
+    # D: seasonal differencing order
+    # Q: seasonal moving average order
+    # s: number of time steps per cycle (length of the seasonal cycle)
+    # SARIMA(0,0,0)(2,0,1)7 model: (weekly)
+        # yt = a7yt-7 + a14yt-14 + m7Et-7 + Et
+    # will be able to capture seasonal weekly patterns, but not local day to day patterns
+    # if we include non-seasonal orders as well, we can capture both patterns
+
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+model = SARIMAX(df, order=(p,d,q), seasonal_order=(P,D,Q,S))
+results = model.fit()
+
+# Need to find the order of differencing 
+# Seasonal differencing
+# subtract the time series value of one season ago
+# to take the seasonal difference:
+df_diff = df.diff(S)
+
+# if the time series shows a trend, then we take the normal difference
+# if there is a strong seasonal cycle, then we will also take the seasonal difference
+# once we find the two differences and made the time series stationary, then we need
+    # to find teh other model orders
+# to find the non-seasonal orders, we plot the ACF and the PACF of the differenced time series
+# to find the seasonal orders, we plot the ACF and PACF of the differenced time series at multiple seasonal steps
+
+fig, (ax1, ax2) = plt.subplots(2,1)
+plot_acf(df_diff, lags=[12,24,36,48,60,72], ax = ax1)
+plot_pacf(df_diff, lags=[12,24,36,48,60,72], ax = ax2)
+plt.show()
+
+# Exercises
+# Import the SARIMAX class
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# Create a SARIMA model
+model = SARIMAX(df1, order=(1,0,0), seasonal_order=(1,1,0,7))
+
+# Fit the model
+results = model.fit()
+
+# Print the results summary
+print(results.summary())
+
+# Import the SARIMAX class
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# Create a SARIMA model
+model = SARIMAX(df2, order=(2,1,1), seasonal_order=(1,0,0,4))
+
+# Fit the model
+results = model.fit()
+
+# Print the results summary
+print(results.summary())
+
+# Import the SARIMAX class
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# Create a SARIMA model
+model = SARIMAX(df3, order=(1,1,0), seasonal_order=(0,1,1,12))
+
+# Fit the model
+results = model.fit()
+
+# Print the results summary
+print(results.summary())
+
+# Take the first and seasonal differences and drop NaNs
+aus_employment_diff = aus_employment.diff().diff(12).dropna()
+
+# Create the figure 
+fig, (ax1, ax2) = plt.subplots(2,1,figsize=(8,6))
+
+# Plot the ACF on ax1
+plot_acf(aus_employment_diff, lags=11, zero=False,ax=ax1)
+
+# Plot the PACF on ax2
+plot_pacf(aus_employment_diff, lags=11, zero=False,ax=ax2)
+
+plt.show()
+
+# Make list of lags
+lags = [12, 24, 36, 48, 60]
+
+# Create the figure 
+fig, (ax1, ax2) = plt.subplots(2,1,figsize=(8,6))
+
+# Plot the ACF on ax1
+plot_acf(aus_employment_diff, lags=lags, zero=False, ax=ax1)
+
+# Plot the PACF on ax2
+plot_pacf(aus_employment_diff, lags=lags, zero=False, ax=ax2)
+
+plt.show()
+
+# Create ARIMA mean forecast
+arima_pred = arima_results.get_forecast(steps=25)
+arima_mean = arima_pred.predicted_mean
+
+# Create SARIMA mean forecast
+sarima_pred = sarima_results.get_forecast(steps=25)
+sarima_mean = sarima_pred.predicted_mean
+
+# Plot mean ARIMA and SARIMA predictions and observed
+plt.plot(dates, sarima_mean, label='SARIMA')
+plt.plot(dates, arima_mean, label='ARIMA')
+plt.plot(wisconsin_test, label='observed')
+plt.legend()
+plt.show()
+
+# Automation and saving
+import pmdarima as pm 
+results = pm.auto_arima(df)
+# loops over model orders to find the best one
+# object returned by the function is the results object of the best model found by the search
+print(results.summary())
+# There are a lot of possible parameters for auto_arima
+# many have default values
+# only required argument is the df
+# Non-seasonal search parameters
+    # d=0, order of non-seasonal differencing
+    # start_p=1, initial guess for p
+    # start_q=1, initial guess for q
+    # max_p=3, max vlaue of p to test
+    # max_q=3, max vlaue of q to test
+# Seasonal search parameters
+    # all of the non-seasonal arguments
+    # seasonal=True
+    # m=7, seasonal period length
+    # D=1, order of seasonal differencing
+    # start_P=1, initial guess for P
+    # start_Q=1, initial guess for Q
+    # max_P=2, max vlaue of P to test
+    # max_Q=2, max vlaue of Q to test
+# Other parameters
+    # information_criterion='aic', used to select best model(either aic or bic)
+    # trace=True, prints results while training, and will print aic, bic for each model it fits
+    # error_action='ignore', ignore orders that don't work
+    # stepwise=True, apply intelligent order search
+
+# Saving model objects
+import joblib
+filepath = 'localpath/greath_model.pkl'
+joblib.dump(model_results_object, filepath)
+
+# to load the model again
+model_results_object = joblib.load(filepath)
+
+# to update the model
+model_results_object.update(df_new)
+
+# adds the new observations and updates the model parameters
+# if you're adding a lot of new data, it may be best to start back with the Box-Jenkins method
+
+# Exercises
+# Create auto_arima model
+model1 = pm.auto_arima(df1,
+                      seasonal=True, m=7,
+                      d=0, D=1, 
+                 	  max_p=2, max_q=2,
+                      trace=True,
+                      error_action='ignore',
+                      suppress_warnings=True) 
+
+# Print model summary
+print(model1.summary())
+
+# Create model
+model2 = pm.auto_arima(df2,
+                      seasonal=False, 
+                      d=1, 
+                      trend='c',
+                 	  max_p=2, max_q=2,
+                      trace=True,
+                      error_action='ignore',
+                      suppress_warnings=True) 
+
+# Print model summary
+print(model2.summary())
+
+# Create model for SARIMAX(p,1,q)(P,1,Q)7
+model3 = pm.auto_arima(df3,
+                      seasonal=True, m=7,
+                      d=1, D=1, 
+                      start_p=1, start_q=1,
+                      max_p=1, max_q=1,
+                      max_P=1, max_Q=1,
+                      trace=True,
+                      error_action='ignore',
+                      suppress_warnings=True) 
+
+# Print model summary
+print(model3.summary())
+
+# Import joblib
+import joblib
+
+# Set model name
+filename = 'candy_model.pkl'
+
+# Pickle it
+joblib.dump(model,filename)
+
+# Import
+import joblib
+
+# Set model name
+filename = "candy_model.pkl"
+
+# Load the model back in
+loaded_model = joblib.load(filename)
+
+# Update the model
+loaded_model.update(df_new)
+
+# SARIMA and Box-Jenkins
+# Need to find if the time series is seasonal
+# find the seasonal period
+# find transforms to make the data stationary
+    # seasonal and non-seasonal differencing
+    # other transforms
+# Mixed differencing
+    # D should be 0 or 1
+    # d + D should be 0-2
+# If seasonality is strong, you should always used one order of seasonal differencing
+# If weak, use seasonal differencing if necessary
+
+# if seasonality is additive, differencing should be enough
+# additive series = trend + season
+
+# if seasonality it mulitiplicative, the SARIMA model can't fit without extra transforms
+# the amplitude of the oscillations will be larger as the data trends up or small as it trends down
+# multiplicative series = trend x season
+# apply log transform first (np.log) (transforms it to additive)
+# then you can use the normal SARIMA model with seasonal differencing
+
+# Exercises
+# Import model class
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+
+# Create model object
+model = SARIMAX(co2, 
+                order=(1,1,1), 
+                seasonal_order=(0,1,1,12), 
+)
+# Fit model
+results = model.fit()
+
+# Plot common diagnostics
+results.plot_diagnostics()
+plt.show()
+
+# Create forecast object
+forecast_object = results.get_forecast(136)
+
+# Extract predicted mean attribute
+mean = forecast_object.predicted_mean
+
+# Calculate the confidence intervals
+conf_int = forecast_object.conf_int()
+
+# Extract the forecast dates
+dates = mean.index
+
+plt.figure()
+
+# Plot past CO2 levels
+plt.plot(co2.index, co2, label='past')
+
+# Plot the prediction means as line
+plt.plot(dates, mean.values, label='predicted')
+
+# Shade between the confidence intervals
+plt.fill_between(dates, conf_int.iloc[:,0], conf_int.iloc[:,1], alpha=0.2)
+
+# Plot legend and show figure
+plt.legend()
+plt.show()
+
+# Print last predicted mean
+print(mean.iloc[-1])
+
+# Print last confidence interval
+print(conf_int.iloc[-1])
+
