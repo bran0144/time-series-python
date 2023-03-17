@@ -334,5 +334,306 @@ percent_score = cross_val_score(model, X, y, cv=5)
 print(np.mean(percent_score))
 
 # Spectrogram
+# Fourier Transform (FFT)
+# Time series data can be described as a combination of quickly changing things and 
+    # slowly changing things (as waves)
+# at each moment in time, we can describe the relative presence of fast and slow moving components
+# Simplest way to do this is a Fourier Transform - combines waves in different amounts to make time series
+# Conerts a single time series into an array that describes the time series as a combination of oscillations
 
+# Spectrogram - combinations of sliding windows over Fourier transforms
+# similar to how a rolling mean was calculated:
+    # choose a window sinze and shape
+    # calculate the FFT within the window
+    # slide the window over by one
+    # aggregate the restuls
+# Called a STFT (Short time Fourier Transform)
+# To calculate the spectrogram, we square each value of the STFT
+# librosa has an sftf function
+
+from librosa.core import stft, amplitude_to_db
+from librosa.display import specshow
+import matplotlib as plt
+
+HOP_LENGTH = 2**4
+SIZE_WINDOW = 2**7
+audio_spec = sftf(audio, hop_length=HOP_LENGTH, n_fft=SIZE_WINDOW)
+
+spec_db = amplitude_to_db(audio_spec)
+fig, ax = plt.subplots()
+specshow(spec_db, sr=sfreq, x_axis='time')
+
+bandwidths= lr.feature.spectral_bandwidth(S=spec)[0]
+centroids = lr.feature.spectral_centroid(S=spec)[0]
+
+fig, ax = plt.subplots()
+specshow(spec, x_axis='time', y_axis='hz', hop_length=HOP_LENGTH, ax=ax)
+ax.plot(times_spec, centroids)
+ax.fill_between(times_spec, centroids - bandwidths /2, centroids + bandwidths/2, alpha=0.5)
+
+centroids_all = []
+bandwidths_all = []
+
+for spec in spectrograms:
+    bandwidths = lr.feature.spectral_bandwidth(S=lr.db_to_amplitude(spec))
+    centroids = lr.feature.spectral_centroid(S=lr.db_to_amplitude(spec))
+    bandwidths_all.append(np.mean(bandwidths))
+    centroids_all.append(np.mean(centroids))
+
+X = np.column_stack([means, stds, maxs, tempos_mean, tempos_max, tempos_std, bandwidths_all, centroids_all])
+
+# Exercises
+
+# Import the stft function
+from librosa.core import stft
+
+# Prepare the STFT
+HOP_LENGTH = 2**4
+spec = stft(audio, hop_length=HOP_LENGTH, n_fft=2**7)
+
+from librosa.core import amplitude_to_db
+from librosa.display import specshow
+
+# Convert into decibels
+spec_db = amplitude_to_db(spec)
+
+# Compare the raw audio to the spectrogram of the audio
+fig, axs = plt.subplots(2, 1, figsize=(10, 10), sharex=True)
+axs[0].plot(time, audio)
+specshow(spec_db, sr=sfreq, x_axis='time', y_axis='hz', hop_length=HOP_LENGTH, ax=axs[1])
+plt.show()
+
+import librosa as lr
+
+# Calculate the spectral centroid and bandwidth for the spectrogram
+bandwidths = lr.feature.spectral_bandwidth(S=spec)[0]
+centroids = lr.feature.spectral_centroid(S=spec)[0]
+
+from librosa.core import amplitude_to_db
+from librosa.display import specshow
+
+# Convert spectrogram to decibels for visualization
+spec_db = amplitude_to_db(spec)
+
+# Display these features on top of the spectrogram
+fig, ax = plt.subplots(figsize=(10, 5))
+specshow(spec_db, x_axis='time', y_axis='hz', hop_length=HOP_LENGTH, ax=ax)
+ax.plot(times_spec, centroids)
+ax.fill_between(times_spec, centroids - bandwidths / 2, centroids + bandwidths / 2, alpha=.5)
+ax.set(ylim=[None, 6000])
+plt.show()
+
+# Loop through each spectrogram
+bandwidths = []
+centroids = []
+
+for spec in spectrograms:
+    # Calculate the mean spectral bandwidth
+    this_mean_bandwidth = np.mean(lr.feature.spectral_bandwidth(S=spec))
+    # Calculate the mean spectral centroid
+    this_mean_centroid = np.mean(lr.feature.spectral_centroid(S=spec))
+    # Collect the values
+    bandwidths.append(this_mean_bandwidth)  
+    centroids.append(this_mean_centroid)
+
+# Create X and y arrays
+X = np.column_stack([means, stds, maxs, tempo_mean, tempo_max, tempo_std, bandwidths, centroids])
+y = labels.reshape(-1, 1)
+
+# Fit the model and score on testing data
+percent_score = cross_val_score(model, X, y, cv=5)
+print(np.mean(percent_score))
+
+# Visualizing relationships between time series
+fig, axs = plt.subplots(1,2)
+
+# Make a line plot for each timeseries
+axs[0].plot(x, c='k', lw=3, alpha=.2)
+axs[0].plot(y)
+axs[0].set(xlabel='time', title='X values = time')
+
+# encode time as color in a scatterplot
+axs[1].scatter(x_long, y_long, c=np.arange(len(x_long)), cmap='viridis')
+axs[1].set(xlabel='x', ylabel='y', title='Color = time')
+
+from sklearn.linear_model import LinearRegression
+model = LinearRegression()
+model.fit(X, y)
+model.predict(X)
+
+alphas = [.1, 1e2, 1e3]
+ax/plot(y_test, color='k', alpha=.3, lw=3)
+for ii, alpha in enumerate(alphas):
+    y_predicted = Ridge(alpha=alpha).fit(X_train, y_train).predict(X_test)
+    ax.plot(y_predicted, c=cmap(ii /len(alphas)))
+ax.legend(['True values', 'Model 1', 'Model 2', 'Model 3'])
+ax.set(xlabel='Time')
+
+from sklearn.metrics import r2_score
+print(r2_score(y_predicted, y_test))
+
+# Exercises
+
+# Plot the raw values over time
+prices.plot()
+plt.show()
+# Scatterplot with one company per axis
+prices.plot.scatter('EBAY', 'YHOO')
+plt.show()
+
+# Scatterplot with color relating to time
+prices.plot.scatter('EBAY', 'YHOO', c=prices.index, 
+                    cmap=plt.cm.viridis, colorbar=False)
+plt.show()
+
+from sklearn.linear_model import Ridge
+from sklearn.model_selection import cross_val_score
+
+# Use stock symbols to extract training data
+X = all_prices[['EBAY', 'NVDA', 'YHOO']]
+y = all_prices[['AAPL']]
+
+# Fit and score the model with cross-validation
+scores = cross_val_score(Ridge(), X, y, cv=3)
+print(scores)
+
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import r2_score
+
+# Split our data into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, 
+                                                    train_size=.8, shuffle=False)
+
+# Fit our model and generate predictions
+model = Ridge()
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
+score = r2_score(y_test, predictions)
+print(score)
+
+# Visualize our predictions along with the "true" values, and print the score
+fig, ax = plt.subplots(figsize=(15, 5))
+ax.plot(y_test, color='k', lw=3)
+ax.plot(predictions, color='r', lw=2)
+plt.show()
+
+# Cleaning and improving your data
+# common problems: missing data, outliers
+# Using interpolation for missing data
+missing = prices.isna()
+prices_interp = prices.interpolate('linear')
+
+ax = prices_interp.plot(c='r')
+prices.plot(c='k', ax=ax, lw=2)
+
+# Using a rolling window to transform data
+# common way is to standardize its mean and variance over time
+# one way, convert each point to represent the %change over a previous window
+
+def percent_change(values):
+    previous_values = values[:-1]
+    last_value= values[-1]
+
+    percent_change = (last - np.mean(previous_values)) / np.mean(previous_values)
+    return percent_change
+
+fig, axs = plt.subplots(1,2, figsize=(10,5))
+ax = prices.plot(ax=axs[0])
+
+ax = prices.rolling(window=20).aggregate(percent_change).plot(ax=axs[1])
+ax.legend_.set_visible(False)
+
+# This transformation can help to detect outliers
+# difficult to decide when to remove or replace outliers (when are they legitimate and when not?)
+# common definition (datapoint that is more than 3 std's away from mean)
+
+fig, axs = plt.subplots(1,2, figsize=(10,5))
+for data, ax in zip([prices, prices_perc_change], axs):
+    this_mean = data.mean()
+    this_std = data.std()
+
+    data.plot(ax=ax)
+    ax.axhline(this_mean + this_std * 3, ls='--', c='r')
+    ax.axhilne(this_mean - this_std * 3, ls='--', c='r')
+
+prices_outlier_centered = prices_outlier_perc - prices_outlier_perc.mean()
+std = prices_outlier_perc.std()
+
+outliers = np.abs(prices_outlier_centered) > (std*3)
+prices_outlier_fixed = prices_outlier_centered.copy()
+prices_outlier_fixed[outliers] = np.nanmedian(prices_outlier_fixed)
+
+fig, axs = plt.subplots(1, 2, figsize =(10,5))
+prices_outlier_centered.plot(ax=axs[0])
+prices_outlier_fixed.plot(ax=axs[1])
+
+# Exercises
+# Visualize the dataset
+prices.plot(legend=False)
+plt.tight_layout()
+plt.show()
+
+# Count the missing values of each time series
+missing_values = prices.isna().sum()
+print(missing_values)
+
+# Create a function we'll use to interpolate and plot
+def interpolate_and_plot(prices, interpolation):
+
+    # Create a boolean mask for missing values
+    missing_values = prices.isna()
+
+    # Interpolate the missing values
+    prices_interp = prices.interpolate(interpolation)
+
+    # Plot the results, highlighting the interpolated values in black
+    fig, ax = plt.subplots(figsize=(10, 5))
+    prices_interp.plot(color='k', alpha=.6, ax=ax, legend=False)
+    
+    # Now plot the interpolated values on top in red
+    prices_interp[missing_values].plot(ax=ax, color='r', lw=3, legend=False)
+    plt.show()
+
+# Interpolate using the latest non-missing value
+interpolation_type = 'zero'
+interpolate_and_plot(prices, interpolation_type)
+
+# Interpolate linearly
+interpolation_type = 'linear'
+interpolate_and_plot(prices, interpolation_type)
+
+# Interpolate with a quadratic function
+interpolation_type = 'quadratic'
+interpolate_and_plot(prices, interpolation_type)
+
+# Your custom function
+def percent_change(series):
+    # Collect all *but* the last value of this window, then the final value
+    previous_values = series[:-1]
+    last_value = series[-1]
+
+    # Calculate the % difference between the last value and the mean of earlier values
+    percent_change = (last_value - np.mean(previous_values)) / np.mean(previous_values)
+    return percent_change
+
+# Apply your custom function and plot
+prices_perc = prices.rolling(20).apply(percent_change)
+prices_perc.loc["2014":"2015"].plot()
+plt.show()
+
+def replace_outliers(series):
+    # Calculate the absolute difference of each timepoint from the series mean
+    absolute_differences_from_mean = np.abs(series - np.mean(series))
+    
+    # Calculate a mask for the differences that are > 3 standard deviations from zero
+    this_mask = absolute_differences_from_mean > (np.std(series) * 3)
+    
+    # Replace these values with the median accross the data
+    series[this_mask] = np.nanmedian(series)
+    return series
+
+# Apply your preprocessing function to the timeseries and plot the results
+prices_perc = prices_perc.apply(replace_outliers)
+prices_perc.loc["2014":"2015"].plot()
+plt.show()
 
