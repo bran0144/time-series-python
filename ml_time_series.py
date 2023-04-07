@@ -637,3 +637,353 @@ prices_perc = prices_perc.apply(replace_outliers)
 prices_perc.loc["2014":"2015"].plot()
 plt.show()
 
+# Creating features over time
+feats = prices.rolling(20).aggregate([np.std, np.max]).dropna()
+
+# Using partial when using aggregate
+from functools import partial 
+mean_over_first_axis = partial(np.mean, axis=0)
+
+# percentiles to summarize your data
+np.percentil(np.linspace(0, 200), q=20)
+
+# Combining percentil with partial functions to calculate a range of percentiles
+data = np.linspace(0,100)
+percentile_funcs = [partial(np.percentile, q=ii) for ii in [20,40,60]]
+percentiles = [i_func(data) for i_func in percentile_funcs]
+print(percentiles)
+
+# calculate multiple percentiles in a rolling window
+data.rolling(20).aggregate(percentiles)
+
+# date based features
+prices.index = pd.to_datetime(prices.index)
+
+days_of_week_num = prices.index.weekday
+print(days_of_week_num[:10])
+
+day_of_week = prices.index.weekday_name
+print(day_of_week[:10])
+
+# Exercises
+
+# Define a rolling window with Pandas, excluding the right-most datapoint of the window
+prices_perc_rolling = prices_perc.rolling(20, min_periods=5, closed='right')
+
+# Define the features you'll calculate for each window
+features_to_calculate = [np.min, np.max, np.mean, np.std]
+
+# Calculate these features for your rolling window object
+features = prices_perc_rolling.aggregate(features_to_calculate)
+
+# Plot the results
+ax = features.loc[:"2011-01"].plot()
+prices_perc.loc[:"2011-01"].plot(ax=ax, color='k', alpha=.2, lw=3)
+ax.legend(loc=(1.01, .6))
+plt.show()
+
+# Import partial from functools
+from functools import partial
+percentiles = [1, 10, 25, 50, 75, 90, 99]
+
+# Use a list comprehension to create a partial function for each quantile
+percentile_functions = [partial(np.percentile, q=percentile) for percentile in percentiles]
+
+# Calculate each of these quantiles on the data using a rolling window
+prices_perc_rolling = prices_perc.rolling(20, min_periods=5, closed='right')
+features_percentiles = prices_perc_rolling.aggregate(percentile_functions)
+
+# Plot a subset of the result
+ax = features_percentiles.loc[:"2011-01"].plot(cmap=plt.cm.viridis)
+ax.legend(percentiles, loc=(1.01, .5))
+plt.show()
+
+# Extract date features from the data, add them as columns
+prices_perc['day_of_week'] = prices_perc.index.dayofweek
+prices_perc['week_of_year'] = prices_perc.index.weekofyear
+prices_perc['month_of_year'] = prices_perc.index.month
+
+# Print prices_perc
+print(prices_perc)
+
+# Time delayed features and autoregression models
+# smoothness is how correlated a timepoints is with its neighboring timepoints (autocorrelation)
+# time shifting data with Pandas
+df.shift(3)
+
+data = pd.Series(...)
+shifts = [0,1,2,3,4,5,6,7]
+many_shifts = {'lag_{}'.format(ii): data.shift(ii) for ii in shifts}
+many_shifts = pd.DataFrame(many_shifts)
+
+model = Ridge()
+model.fit(many_shifts, data)
+
+fig, ax = plt.subplots()
+ax.bar(many_shifts.columns, model.coef_)
+ax.set(xlabel='Coefficient name', ylabel='Coefficient value')
+plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
+
+# Exercises
+
+# These are the "time lags"
+shifts = np.arange(1, 11).astype(int)
+
+# Use a dictionary comprehension to create name: value pairs, one pair per shift
+shifted_data = {"lag_{}_day".format(day_shift): prices_perc.shift(day_shift) for day_shift in shifts}
+
+# Convert into a DataFrame for subsequent use
+prices_perc_shifted = pd.DataFrame(shifted_data)
+
+# Plot the first 100 samples of each
+ax = prices_perc_shifted.iloc[:100].plot(cmap=plt.cm.viridis)
+prices_perc.iloc[:100].plot(color='r', lw=2)
+ax.legend(loc='best')
+plt.show()
+
+# Replace missing values with the median for each column
+X = prices_perc_shifted.fillna(np.nanmedian(prices_perc_shifted))
+y = prices_perc.fillna(np.nanmedian(prices_perc))
+
+# Fit the model
+model = Ridge()
+model.fit(X, y)
+
+def visualize_coefficients(coefs, names, ax):
+    # Make a bar plot for the coefficients, including their names on the x-axis
+    ax.bar(names, coefs)
+    ax.set(xlabel='Coefficient name', ylabel='Coefficient value')
+    
+    # Set formatting so it looks nice
+    plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
+    return ax
+
+# Visualize the output data up to "2011-01"
+fig, axs = plt.subplots(2, 1, figsize=(10, 5))
+y.loc[:'2011-01'].plot(ax=axs[0])
+
+# Run the function to visualize model's coefficients
+visualize_coefficients(model.coef_, prices_perc_shifted.columns, ax=axs[1])
+plt.show()
+
+# Visualize the output data up to "2011-01"
+fig, axs = plt.subplots(2, 1, figsize=(10, 5))
+y.loc[:'2011-01'].plot(ax=axs[0])
+
+# Run the function to visualize model's coefficients
+visualize_coefficients(model.coef_, prices_perc_shifted.columns, ax=axs[1])
+plt.show()
+
+# Cross validation for time series data
+for tr, tt in cv.split(X, y):
+    model.fit(X[tr], y[tr])
+    model.score(X[tt], y[tt])
+
+from sklearn.model_selection import KFold
+cv = KFold(n_splits=5)
+for tr, tt in cv.split(X, y):
+    ...
+
+fig, axs = plt.subplots(2,1)
+# plot the indices
+axs[0].scatter(tt, [0] * len(tt), marker='_', s=2, lw=40)
+axs[0].set(ylim=[-.1, .1], title='Test set indices (color=CV loop)', xlabel='Index of raw data')
+
+# plot the model predictions on each iteration
+axs[1].plot(model.predict(X[tt]))
+axs[1].set(title='Test set predictions on each CV loop', xlabel='Prediction Index')
+
+# you should NOT shuffle your data when making predictions with time series
+
+from sklearn.model_selection import TimeSeriesSplit
+cv = TimeSeriesSplit(n_splits=10)
+
+fig, ax = plt.subplots(figsize=(10,5))
+for ii, (tr, tt) in enumerate(cv.split(X,y)):
+    l1 = ax.scatter(tr, [ii] * len(tr), c=[plt.cm.coolwarm(.1)], marker='_', lw=6)
+    l2 = ax.scatter(tt, [ii] * len(tt), c=[plt.cm.coolwarm(.9)], marker='_', lw=6)
+    ax.set(ylim=[10,1], title='TimeSeriesSplit behavior', xlabel='data index', ylabel='CV iteration')
+    ax.legend([l1,l2], ['Training', "Validation"])
+
+def myfunction(estimator, X, y):
+    y_pred = estimator.predict(X)
+    my_custom_score = my_custom_function(y_pred, y)
+    return my_custom_score
+
+def my_pearsonr(est, X, y):
+    y_pred = est.predict(X).squeeze()
+    my_corrcoef_matrix = np.corrcoef(y_pred, y.squeeze())
+    my_corrcoef = my_corrcoef[1,0]
+    return my_corrcoef
+
+# Exercises
+
+# Import ShuffleSplit and create the cross-validation object
+from sklearn.model_selection import ShuffleSplit
+cv = ShuffleSplit(n_splits=10, random_state=1)
+
+# Iterate through CV splits
+results = []
+for tr, tt in cv.split(X, y):
+    # Fit the model on training data
+    model.fit(X[tr], y[tr])
+
+    # Generate predictions on the test data, score the predictions, and collect
+    prediction = model.predict(X[tt])
+    score = r2_score(y[tt], prediction)
+    results.append((prediction, score, tt))
+    
+# Custom function to quickly visualize predictions
+visualize_predictions(results)
+
+# Create KFold cross-validation object
+from sklearn.model_selection import KFold
+cv = KFold(n_splits=10, shuffle=False)
+
+# Iterate through CV splits
+results = []
+for tr, tt in cv.split(X, y):
+    # Fit the model on training data
+    model.fit(X[tr], y[tr])
+    
+    # Generate predictions on the test data and collect
+    prediction = model.predict(X[tt])
+    results.append((prediction, tt))
+    
+# Custom function to quickly visualize predictions
+visualize_predictions(results)
+
+# Import TimeSeriesSplit
+from sklearn.model_selection import TimeSeriesSplit
+
+# Create time-series cross-validation object
+cv = TimeSeriesSplit(n_splits=10)
+
+# Iterate through CV splits
+fig, ax = plt.subplots()
+for ii, (tr, tt) in enumerate(cv.split(X, y)):
+    # Plot the training data on each iteration, to see the behavior of the CV
+    ax.plot(tr, ii + y[tr])
+
+ax.set(title='Training data on each CV iteration', ylabel='CV iteration')
+plt.show()
+
+# Stationarity and Stability
+# Bootstrapping the mean - common way to assess variability
+# Bootstrap of the mean:
+    # take a random sample of data with replacement
+    # calculate the mean of the sample
+    # repeat this process many times (1000+)
+    # calculate the percentiles of hte result(usually 2.5, 97.5)
+
+from sklearn.utils import resample
+
+n_boots = 100
+bootstrap_means = np.zeros(n_boots, n_coefficients)
+for ii in range(n_boots):
+    random_sample = resample(cv_coefficients)
+    bootstrap_means[ii] = random_sample.mean(axis=0)
+
+percentiles = np.percentile(bootstrap_means, (2.5, 97.5), axis=0)
+
+fig, ax = plt.subplots()
+ax.scatter(many_shifts.columns, percentiles[0], marker='_', s = 200)
+ax.scatter(many_shifts.columns, percentiles[1], marker='_', s = 200)
+
+# model performance over time
+def my_corrcoef(est, X, y):
+    return np.corrcoef(y, est.predict(X))[1,0]
+
+first_indices = [data.index[tt[0]] for tr, tt in cv.split(X,y)]
+cv_scores = cross_val_score(model, X, y, cv=cv, scoring=my_corrcoef)
+cv_scores = pd.Series(cv_scores, index=first_indices)
+
+fig, axs = plt.subplots(2, 1, figsize=(10,5), sharex=True)
+
+cv_scores_mean = cv_scores.rolling(10, min_periods=1).mean()
+cv_scores.plot(ax=axs[0])
+axs[0].set(title='Validation scores (correlation)', ylim=[0,1])
+data.plot(ax=axs[1])
+axs[1].set(title='Validation data')
+
+window = 100
+cv = TimeSeriesSplit(n_splits=10, max_train_size = window)
+
+# Exercises:
+
+from sklearn.utils import resample
+
+def bootstrap_interval(data, percentiles=(2.5, 97.5), n_boots=100):
+    """Bootstrap a confidence interval for the mean of columns of a 2-D dataset."""
+    # Create empty array to fill the results
+    bootstrap_means = np.zeros([n_boots, data.shape[-1]])
+    for ii in range(n_boots):
+        # Generate random indices for data *with* replacement, then take the sample mean
+        random_sample = resample(data)
+        bootstrap_means[ii] = random_sample.mean(axis=0)
+
+    # Compute the percentiles of choice for the bootstrapped means
+    percentiles = np.percentile(bootstrap_means, percentiles, axis=0)
+    return percentiles
+
+# Iterate through CV splits
+n_splits = 100
+cv = TimeSeriesSplit(n_splits=n_splits)
+
+# Create empty array to collect coefficients
+coefficients = np.zeros([n_splits, X.shape[1]])
+
+for ii, (tr, tt) in enumerate(cv.split(X, y)):
+    # Fit the model on training data and collect the coefficients
+    model.fit(X[tr], y[tr])
+    coefficients[ii] = model.coef_
+
+# Calculate a confidence interval around each coefficient
+bootstrapped_interval = bootstrap_interval(coefficients, percentiles=(2.5, 97.5), n_boots=100)
+
+# Plot it
+fig, ax = plt.subplots()
+ax.scatter(feature_names, bootstrapped_interval[0], marker='_', lw=3)
+ax.scatter(feature_names, bootstrapped_interval[1], marker='_', lw=3)
+ax.set(title='95% confidence interval for model coefficients')
+plt.setp(ax.get_xticklabels(), rotation=45, horizontalalignment='right')
+plt.show()
+
+from sklearn.model_selection import cross_val_score
+
+# Generate scores for each split to see how the model performs over time
+scores = cross_val_score(model, X, y, cv=cv, scoring=my_pearsonr)
+
+# Convert to a Pandas Series object
+scores_series = pd.Series(scores, index=times_scores, name='score')
+
+# Bootstrap a rolling confidence interval for the mean score
+scores_lo = scores_series.rolling(20).aggregate(partial(bootstrap_interval, percentiles=2.5))
+scores_hi = scores_series.rolling(20).aggregate(partial(bootstrap_interval, percentiles=97.5))
+
+# Plot the results
+fig, ax = plt.subplots()
+scores_lo.plot(ax=ax, label="Lower confidence interval")
+scores_hi.plot(ax=ax, label="Upper confidence interval")
+ax.legend()
+plt.show()
+
+# Pre-initialize window sizes
+window_sizes = [25, 50, 75, 100]
+
+# Create an empty DataFrame to collect the stores
+all_scores = pd.DataFrame(index=times_scores)
+
+# Generate scores for each split to see how the model performs over time
+for window in window_sizes:
+    # Create cross-validation object using a limited lookback window
+    cv = TimeSeriesSplit(n_splits=100, max_train_size=window)
+    
+    # Calculate scores across all CV splits and collect them in a DataFrame
+    this_scores = cross_val_score(model, X, y, cv=cv, scoring=my_pearsonr)
+    all_scores['Length {}'.format(window)] = this_scores
+
+# Visualize the scores
+ax = all_scores.rolling(10).mean().plot(cmap=plt.cm.coolwarm)
+ax.set(title='Scores for multiple windows', ylabel='Correlation (r)')
+plt.show()
